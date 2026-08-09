@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>RunDance · Crate</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --ink: #f4f2ef;
+    --dim: #6b6878;
+    --hot: #ff3d81;
+    --warm: #ffb03d;
+    --ok: #3dd68c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    display: flex; flex-direction: column;
+    user-select: none; -webkit-user-select: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  header { display: flex; justify-content: space-between; align-items: baseline; padding: 20px 24px 0; }
+  .brand { font-weight: 800; letter-spacing: 0.16em; font-size: 14px; }
+  .brand em { font-style: normal; color: var(--hot); }
+  .proto { color: var(--dim); font-size: 11px; letter-spacing: 0.1em; }
+
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 20px; width: 100%; max-width: 560px; margin: 0 auto; }
+
+  #login { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; text-align: center; }
+  #login h1 { font-size: 28px; font-weight: 800; line-height: 1.25; }
+  #login p { color: var(--dim); font-size: 15px; line-height: 1.5; max-width: 300px; }
+  .bigBtn {
+    font: inherit; font-size: 17px; font-weight: 800; letter-spacing: 0.06em;
+    color: var(--bg); background: linear-gradient(135deg, var(--hot), var(--warm));
+    border: none; border-radius: 999px; padding: 17px 46px;
+    box-shadow: 0 0 40px rgba(255, 61, 129, 0.35);
+  }
+  .bigBtn:active { transform: scale(0.97); }
+  .err { color: var(--warm); font-size: 13px; max-width: 320px; word-break: break-word; }
+
+  #crate { display: none; flex-direction: column; width: 100%; gap: 18px; padding-top: 18px; }
+  .card { background: #12101a; border: 1px solid #221f2e; border-radius: 18px; padding: 16px 18px; }
+  .cardTitle { color: var(--dim); font-size: 11px; letter-spacing: 0.2em; margin-bottom: 10px; }
+  #who { font-size: 15px; font-weight: 700; }
+  #who .ok { color: var(--ok); }
+
+  #nowTrack { font-size: 16px; font-weight: 700; line-height: 1.35; min-height: 22px; }
+  #nowArtist { color: var(--dim); font-size: 13px; margin-top: 2px; }
+  #deviceLine { color: var(--dim); font-size: 12px; margin-top: 8px; }
+  #deviceLine b { color: var(--ok); font-weight: 600; }
+  #transport { display: flex; gap: 14px; margin-top: 14px; justify-content: center; }
+  .tBtn {
+    font: inherit; font-size: 20px; color: var(--ink);
+    width: 58px; height: 58px; border-radius: 50%;
+    background: #1a1725; border: 1px solid #2a2836;
+  }
+  .tBtn:active { border-color: var(--hot); }
+  .tBtn.main { width: 68px; height: 68px; font-size: 24px; }
+
+  #likedMeta { color: var(--dim); font-size: 12px; margin-bottom: 8px; }
+  #likedMeta b { color: var(--ink); }
+  .track { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #1a1725; }
+  .track:last-child { border-bottom: none; }
+  .tName { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tArtist { color: var(--dim); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tLeft { min-width: 0; flex: 1; }
+
+  #logout { align-self: center; margin: 4px 0 10px; font: inherit; font-size: 12px; color: var(--dim); background: none; border: none; text-decoration: underline; }
+  footer { text-align: center; color: #3c3948; font-size: 10px; padding: 14px; letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">RUN<em>DANCE</em></div>
+  <div class="proto">P3 · CRATE</div>
+</header>
+
+<main>
+  <section id="login">
+    <h1>Open the crate</h1>
+    <p>Connect your Spotify so RunDance can see your songs and touch the decks. Premium account, one tap.</p>
+    <button class="bigBtn" id="connectBtn">CONNECT SPOTIFY</button>
+    <div class="err" id="err"></div>
+  </section>
+
+  <section id="crate">
+    <div class="card">
+      <div class="cardTitle">CONNECTED</div>
+      <div id="who">…</div>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">DECKS</div>
+      <div id="nowTrack">Nothing playing</div>
+      <div id="nowArtist"></div>
+      <div id="deviceLine">Open Spotify on your phone and play any song — then control it from here.</div>
+      <div id="transport">
+        <button class="tBtn" id="prevBtn">⏮</button>
+        <button class="tBtn main" id="playBtn">⏯</button>
+        <button class="tBtn" id="nextBtn">⏭</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">YOUR CRATE · LIKED SONGS</div>
+      <div id="likedMeta">loading…</div>
+      <div id="likedList"></div>
+    </div>
+
+    <button id="logout">disconnect</button>
+  </section>
+</main>
+
+<footer>your music stays yours · tokens live only on this phone</footer>
+
+<script>
+'use strict';
+
+/* ================= Spotify PKCE auth =================
+   Public client — no secret. Verifier + tokens live in localStorage
+   on the phone only. */
+const CLIENT_ID = '1ef4c2f856ac4bafa74cce2d2bd89c94';
+const REDIRECT_URI = location.origin + location.pathname;   // exact registered URI
+const SCOPES = 'user-library-read user-read-playback-state user-modify-playback-state';
+const AUTH_URL = 'https://accounts.spotify.com/authorize';
+const TOKEN_URL = 'https://accounts.spotify.com/api/token';
+
+const $ = id => document.getElementById(id);
+const store = {
+  get access()  { return localStorage.getItem('rd_access'); },
+  get refresh() { return localStorage.getItem('rd_refresh'); },
+  get expires() { return parseInt(localStorage.getItem('rd_expires') || '0', 10); },
+  save(tok) {
+    localStorage.setItem('rd_access', tok.access_token);
+    if (tok.refresh_token) localStorage.setItem('rd_refresh', tok.refresh_token);
+    localStorage.setItem('rd_expires', String(Date.now() + (tok.expires_in - 60) * 1000));
+  },
+  clear() { ['rd_access','rd_refresh','rd_expires','rd_verifier'].forEach(k => localStorage.removeItem(k)); }
+};
+
+function b64url(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function beginAuth() {
+  $('err').textContent = '';
+  try {
+    const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
+    localStorage.setItem('rd_verifier', verifier);
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+    const challenge = b64url(digest);
+    const p = new URLSearchParams({
+      client_id: CLIENT_ID,
+      response_type: 'code',
+      redirect_uri: REDIRECT_URI,
+      scope: SCOPES,
+      code_challenge_method: 'S256',
+      code_challenge: challenge,
+    });
+    location.href = AUTH_URL + '?' + p.toString();
+  } catch (e) {
+    $('err').textContent = 'Could not start login: ' + e.message;
+  }
+}
+
+async function tokenRequest(body) {
+  const res = await fetch(TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error_description || data.error || ('token http ' + res.status));
+  return data;
+}
+
+async function finishAuth(code) {
+  const verifier = localStorage.getItem('rd_verifier');
+  if (!verifier) throw new Error('login state lost — tap connect again');
+  const tok = await tokenRequest({
+    grant_type: 'authorization_code',
+    code, redirect_uri: REDIRECT_URI,
+    client_id: CLIENT_ID, code_verifier: verifier,
+  });
+  store.save(tok);
+  history.replaceState(null, '', REDIRECT_URI);   // clean ?code= from the URL
+}
+
+async function ensureToken() {
+  if (store.access && Date.now() < store.expires) return store.access;
+  if (store.refresh) {
+    const tok = await tokenRequest({
+      grant_type: 'refresh_token',
+      refresh_token: store.refresh,
+      client_id: CLIENT_ID,
+    });
+    store.save(tok);
+    return store.access;
+  }
+  return null;
+}
+
+/* ================= Spotify API ================= */
+async function api(path, opts = {}) {
+  const token = await ensureToken();
+  if (!token) throw new Error('not connected');
+  const res = await fetch('https://api.spotify.com/v1' + path, {
+    ...opts,
+    headers: { Authorization: 'Bearer ' + token, ...(opts.headers || {}) },
+  });
+  if (res.status === 204) return null;
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const msg = data?.error?.message || ('http ' + res.status);
+    throw new Error(msg);
+  }
+  return data;
+}
+
+/* ================= UI flows ================= */
+async function showCrate() {
+  $('login').style.display = 'none';
+  $('crate').style.display = 'flex';
+
+  // who
+  try {
+    const me = await api('/me');
+    const prem = me.product === 'premium';
+    $('who').innerHTML = (me.display_name || me.id) +
+      ' · <span class="' + (prem ? 'ok' : '') + '">' + (me.product || '?') + '</span>';
+    if (!prem) $('who').innerHTML += ' <span style="color:var(--warm)">— playback control needs Premium</span>';
+  } catch (e) { $('who').textContent = 'profile error: ' + e.message; }
+
+  // liked songs, first page
+  try {
+    const liked = await api('/me/tracks?limit=50');
+    $('likedMeta').innerHTML = '<b>' + liked.total + '</b> songs in the crate — first ' + liked.items.length + ':';
+    $('likedList').innerHTML = liked.items.map(it => {
+      const t = it.track;
+      return '<div class="track"><div class="tLeft"><div class="tName">' + esc(t.name) +
+        '</div><div class="tArtist">' + esc(t.artists.map(a => a.name).join(', ')) + '</div></div></div>';
+    }).join('');
+  } catch (e) { $('likedMeta').textContent = 'library error: ' + e.message; }
+
+  pollPlayer();
+}
+
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+let pollTimer = null;
+async function pollPlayer() {
+  if (pollTimer) clearTimeout(pollTimer);
+  try {
+    const p = await api('/me/player');
+    if (p && p.item) {
+      $('nowTrack').textContent = p.item.name;
+      $('nowArtist').textContent = p.item.artists.map(a => a.name).join(', ');
+      $('deviceLine').innerHTML = (p.is_playing ? 'playing' : 'paused') + ' on <b>' +
+        esc(p.device?.name || '?') + '</b>';
+    } else {
+      $('nowTrack').textContent = 'Nothing playing';
+      $('nowArtist').textContent = '';
+      $('deviceLine').textContent = 'Open Spotify on your phone and play any song — then control it from here.';
+    }
+  } catch (e) {
+    $('deviceLine').textContent = 'player: ' + e.message;
+  }
+  if (document.visibilityState === 'visible') pollTimer = setTimeout(pollPlayer, 4000);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && $('crate').style.display !== 'none') pollPlayer();
+});
+
+async function transport(action) {
+  try {
+    if (action === 'playpause') {
+      const p = await api('/me/player');
+      if (p && p.is_playing) await api('/me/player/pause', { method: 'PUT' });
+      else await api('/me/player/play', { method: 'PUT' });
+    } else if (action === 'next') await api('/me/player/next', { method: 'POST' });
+    else if (action === 'prev') await api('/me/player/previous', { method: 'POST' });
+    setTimeout(pollPlayer, 400);
+  } catch (e) {
+    $('deviceLine').textContent = 'decks: ' + e.message +
+      (e.message.includes('No active device') || e.message.includes('NO_ACTIVE_DEVICE')
+        ? ' — start playback in the Spotify app once, then retry.' : '');
+  }
+}
+
+$('connectBtn').addEventListener('click', beginAuth);
+$('playBtn').addEventListener('click', () => transport('playpause'));
+$('nextBtn').addEventListener('click', () => transport('next'));
+$('prevBtn').addEventListener('click', () => transport('prev'));
+$('logout').addEventListener('click', () => { store.clear(); location.reload(); });
+
+/* ================= boot ================= */
+(async function boot() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('error')) {
+    $('err').textContent = 'Spotify said: ' + q.get('error');
+    history.replaceState(null, '', REDIRECT_URI);
+    return;
+  }
+  if (q.get('code')) {
+    try { await finishAuth(q.get('code')); }
+    catch (e) { $('err').textContent = 'Login failed: ' + e.message; return; }
+  }
+  if (await ensureToken().catch(() => null)) showCrate();
+})();
+</script>
+</body>
+</html>
