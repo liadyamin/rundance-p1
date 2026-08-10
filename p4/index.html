@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>RunDance · Crate Scan</title>
+<title>RunDance · Song Scan</title>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -83,14 +83,14 @@
 <body>
 <header>
   <div class="brand">RUN<em>DANCE</em></div>
-  <div class="proto">P4 · CRATE SCAN</div>
+  <div class="proto">P4 · SONG SCAN</div>
 </header>
 
 <main>
   <section id="gate">
-    <h1>Scan the crate</h1>
+    <h1>Scan your songs</h1>
     <p>I'll tag every song in your Liked Songs with its tempo and find everything that can carry your groove — as-is or with a small tune. Pick 80 or 160 after the scan.</p>
-    <button class="bigBtn" id="scanBtn">SCAN MY CRATE</button>
+    <button class="bigBtn" id="scanBtn">SCAN MY SONGS</button>
     <div class="err" id="err"></div>
     <button class="linkBtn" id="p3link" style="display:none" onclick="location.href='../p3/'">connect Spotify first →</button>
   </section>
@@ -199,7 +199,7 @@ async function runScan() {
       if (it.track && it.track.id) tracks.push({ id: it.track.id, name: it.track.name, artists: it.track.artists.map(a => a.name).join(', ') });
     }
     offset += 50;
-    prog('pulling the crate — ' + Math.min(offset, total) + ' / ' + total, Math.round(30 * Math.min(offset, total) / total));
+    prog('pulling your songs — ' + Math.min(offset, total) + ' / ' + total, Math.round(30 * Math.min(offset, total) / total));
     await sleep(80);
   }
 

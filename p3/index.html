@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>RunDance · Crate</title>
+<title>RunDance · Your Songs</title>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -77,12 +77,12 @@
 <body>
 <header>
   <div class="brand">RUN<em>DANCE</em></div>
-  <div class="proto">P3 · CRATE</div>
+  <div class="proto">P3 · YOUR SONGS</div>
 </header>
 
 <main>
   <section id="login">
-    <h1>Open the crate</h1>
+    <h1>Bring your songs</h1>
     <p>Connect your Spotify so RunDance can see your songs and touch the decks. Premium account, one tap.</p>
     <button class="bigBtn" id="connectBtn">CONNECT SPOTIFY</button>
     <div class="err" id="err"></div>
@@ -107,7 +107,7 @@
     </div>
 
     <div class="card">
-      <div class="cardTitle">YOUR CRATE · LIKED SONGS</div>
+      <div class="cardTitle">YOUR SONGS · LIKED</div>
       <div id="likedMeta">loading…</div>
       <div id="likedList"></div>
     </div>
@@ -240,7 +240,7 @@ async function showCrate() {
   // liked songs, first page
   try {
     const liked = await api('/me/tracks?limit=50');
-    $('likedMeta').innerHTML = '<b>' + liked.total + '</b> songs in the crate — first ' + liked.items.length + ':';
+    $('likedMeta').innerHTML = '<b>' + liked.total + '</b> songs found — first ' + liked.items.length + ':';
     $('likedList').innerHTML = liked.items.map(it => {
       const t = it.track;
       return '<div class="track"><div class="tLeft"><div class="tName">' + esc(t.name) +
