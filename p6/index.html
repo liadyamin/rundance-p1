@@ -249,11 +249,14 @@ function startPlayback(uris) {
       setTimeout(pollPlayer, 400);
       return;
     }
-    // spotify is asleep — open it once, keep knocking either way
+    // spotify is asleep — a page can open it, but only a finger can press
+    // the first play. take them straight to the first song of the set.
     if (!openedSpotify && n >= 1) {
       openedSpotify = true;
-      $('strideHint').textContent = 'waking spotify…';
-      location.href = 'spotify://';
+      const first = (wantPlayback[0] || '').replace('spotify:track:', '');
+      $('strideHint').textContent = 'spotify will open — tap play there, then come back';
+      $('state') && ($('state').textContent = 'tap play in spotify, then return');
+      location.href = 'spotify:track:' + first;
     }
     wakeTimer = setTimeout(() => attempt(n + 1), 2500);
   };
@@ -286,10 +289,49 @@ async function loadLibrary() {
         tempo: cache[it.track.id].tempo, energy: cache[it.track.id].energy ?? 0.5 });
     offset += 50;
   }
+  // broaden the pool: top tracks + recently played join the library,
+  // even when they were never "liked". untagged newcomers get tempos
+  // live from reccobeats and are remembered for next time.
+  const extras = new Map();
   try {
     const top = await spotify('/me/top/tracks?limit=50&time_range=medium_term');
-    (top.items || []).forEach((t, i) => topRank.set(t.id, 50 - i));
+    (top.items || []).forEach((t, i) => { topRank.set(t.id, 50 - i); extras.set(t.id, t); });
   } catch (e) { /* quietly optional */ }
+  try {
+    const rec = await spotify('/me/player/recently-played?limit=50');
+    (rec.items || []).forEach(it => { if (it.track) extras.set(it.track.id, it.track); });
+  } catch (e) { /* quietly optional */ }
+
+  const known = new Set(library.map(t => t.id));
+  const newcomers = [...extras.values()].filter(t => t && t.id && !known.has(t.id));
+  const needTag = newcomers.filter(t => !cache[t.id]);
+  for (let i = 0; i < needTag.length; i += 35) {
+    try {
+      const ids = needTag.slice(i, i + 35).map(t => t.id);
+      const r = await fetch(RB + '/track?ids=' + ids.join(','));
+      if (!r.ok) continue;
+      const content = (await r.json()).content || [];
+      const rbToSp = new Map();
+      const rbIds = [];
+      for (const c of content) {
+        const m = (c.href || '').match(/track\/([A-Za-z0-9]+)/);
+        if (m) { rbToSp.set(c.id, m[1]); rbIds.push(c.id); }
+      }
+      if (!rbIds.length) continue;
+      const fr = await fetch(RB + '/audio-features?ids=' + rbIds.join(','));
+      if (!fr.ok) continue;
+      for (const f of ((await fr.json()).content || [])) {
+        const sid = rbToSp.get(f.id);
+        if (sid && typeof f.tempo === 'number' && f.tempo > 0)
+          cache[sid] = { tempo: f.tempo, energy: f.energy, dance: f.danceability };
+      }
+    } catch (e) { /* partial is fine */ }
+  }
+  try { localStorage.setItem('rd_bpm_cache', JSON.stringify(cache)); } catch (e) {}
+  for (const t of newcomers) if (cache[t.id])
+    library.push({ id: t.id, name: t.name,
+      artists: (t.artists || []).map(a => a.name).join(', '),
+      tempo: cache[t.id].tempo, energy: cache[t.id].energy ?? 0.5 });
   return true;
 }
 
@@ -467,6 +509,33 @@ function gridDelta(spm, grid) {
   return best;
 }
 
+/* the dj reads the floor: if your average cadence settles somewhere
+   else for ~25s, the set follows you there — next song, your tempo. */
+const RETARGET_WINDOW_MS = 25000, RETARGET_DIFF = 4, RETARGET_COOLDOWN_MS = 45000;
+let cadHist = [], lastRetarget = 0;
+
+function maybeFollowTheFloor(display) {
+  const now = performance.now();
+  cadHist.push({ t: now, v: display });
+  while (cadHist.length && now - cadHist[0].t > RETARGET_WINDOW_MS) cadHist.shift();
+  if (now - lastRetarget < RETARGET_COOLDOWN_MS) return;
+  if (cadHist.length < 40) return;                      // ~25s of readings
+  if (now - cadHist[0].t < RETARGET_WINDOW_MS - 2000) return;
+  const avg = cadHist.reduce((s, x) => s + x.v, 0) / cadHist.length;
+  if (Math.abs(avg - target) <= RETARGET_DIFF) return;
+  const newTarget = Math.round(avg);
+  const newSet = buildSet(newTarget);
+  if (newSet.length < 3) return;                        // nowhere to follow
+  lastRetarget = now;
+  target = newTarget;
+  currentSet = newSet;
+  cadHist = [];
+  $('targetShow').textContent = target;
+  $('state').textContent = 'following you';
+  startPlayback(currentSet.slice(0, 50).map(t => 'spotify:track:' + t.id));
+  discover(true);
+}
+
 function floorTick() {
   if (!running) return;
   const est = estimateSpm();
@@ -474,6 +543,7 @@ function floorTick() {
   if (est && est.spm) {
     smoothSpm = smoothSpm === null ? est.spm : smoothSpm * 0.7 + est.spm * 0.3;
     display = Math.round(smoothSpm);
+    maybeFollowTheFloor(display);
   } else if (est && est.still) smoothSpm = null;
 
   $('spm').textContent = display !== null ? display : '—';
