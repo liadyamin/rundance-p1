@@ -4,155 +4,335 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>RunDance · Beat</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="rundance">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>rundance</title>
 <style>
   :root {
-    --bg: #0a0a0f;
-    --ink: #f4f2ef;
-    --dim: #6b6878;
-    --hot: #ff3d81;
-    --warm: #ffb03d;
-    --cool: #3dd6ff;
+    --paper: #ffffff;
+    --ink: #1d1d1b;
+    --faint: #b0b0a8;
+    --line: #ededea;
+    --red: #b3282d;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overscroll-behavior: none; }
   body {
-    background: var(--bg);
-    color: var(--ink);
+    background: var(--paper); color: var(--ink);
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-    display: flex;
-    flex-direction: column;
-    user-select: none;
-    -webkit-user-select: none;
+    display: flex; flex-direction: column;
+    user-select: none; -webkit-user-select: none;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-  header {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 20px 24px 0;
-  }
-  .brand { font-weight: 800; letter-spacing: 0.16em; font-size: 14px; }
-  .brand em { font-style: normal; color: var(--hot); }
-  .proto { color: var(--dim); font-size: 11px; letter-spacing: 0.1em; }
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 26px 20px; width: 100%; max-width: 480px; margin: 0 auto; }
+  section { width: 100%; }
 
-  main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 0 24px; }
+  #gate { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #runBtn {
+    width: 210px; height: 210px; border-radius: 50%;
+    font: inherit; font-size: 15px; font-weight: 300; letter-spacing: 0.36em; text-indent: 0.36em;
+    color: var(--ink); background: none; border: 1px solid var(--ink);
+    transition: color 0.4s, border-color 0.4s;
+    text-transform: lowercase;
+  }
+  #runBtn:active { color: var(--red); border-color: var(--red); }
+  #gateSub { font-size: 11px; font-weight: 300; letter-spacing: 0.14em; color: var(--faint); margin-top: 26px; min-height: 16px; text-align: center; text-transform: lowercase; }
+  .err { color: var(--red); font-size: 12px; font-weight: 300; max-width: 300px; line-height: 1.8; margin-top: 18px; text-align: center; }
+  .err:empty { display: none; }
+  .err a { color: var(--red); }
 
-  /* idle screen */
-  #idle { display: flex; flex-direction: column; align-items: center; gap: 28px; text-align: center; }
-  #idle h1 { font-size: 28px; font-weight: 800; line-height: 1.2; }
-  #idle p { color: var(--dim); font-size: 15px; line-height: 1.5; max-width: 300px; }
-  #startBtn {
-    font: inherit; font-size: 18px; font-weight: 800; letter-spacing: 0.08em;
-    color: var(--bg); background: linear-gradient(135deg, var(--hot), var(--warm));
-    border: none; border-radius: 999px; padding: 18px 52px;
-    box-shadow: 0 0 40px rgba(255, 61, 129, 0.35);
+  #stride { display: none; flex-direction: column; align-items: center; text-align: center; }
+  .quiet { font-size: 11px; font-weight: 300; letter-spacing: 0.3em; color: var(--faint); text-transform: lowercase; }
+  #strideSpm { font-size: min(38vw, 160px); font-weight: 100; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 24px 0 4px; }
+  #strideSpm.faded { color: var(--line); }
+  #strideHint { font-size: 12px; font-weight: 300; color: var(--faint); letter-spacing: 0.08em; min-height: 16px; }
+  #slider { width: min(74vw, 320px); margin-top: 46px; accent-color: var(--ink); }
+  #lockNowBtn {
+    margin-top: 30px; font: inherit; font-size: 12px; font-weight: 300; letter-spacing: 0.3em; text-indent: 0.3em;
+    color: var(--ink); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 14px 40px;
+    text-transform: lowercase;
   }
-  #startBtn:active { transform: scale(0.97); }
-  .err { color: var(--warm); font-size: 13px; max-width: 300px; }
 
-  /* live screen */
-  #live { display: none; flex-direction: column; align-items: center; width: 100%; }
-  #pulse {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--dim); margin-bottom: 6px;
-    transition: transform 0.06s ease-out, background 0.06s;
+  #floor { display: none; flex-direction: column; align-items: center; }
+  #state { font-size: 11px; font-weight: 300; letter-spacing: 0.34em; text-indent: 0.34em; color: var(--faint); min-height: 16px; text-transform: lowercase; text-align: center; }
+  #state.instep { color: var(--red); }
+  #state.near { color: var(--ink); }
+  #spm { font-size: min(26vw, 110px); font-weight: 100; line-height: 1.05; font-variant-numeric: tabular-nums; text-align: center; margin: 8px 0 0; }
+  #spm.faded { color: var(--line); }
+  #spmSub { font-size: 9px; font-weight: 300; letter-spacing: 0.26em; color: var(--faint); text-align: center; text-transform: lowercase; }
+
+  #player { width: 100%; margin-top: 26px; }
+  #nowTrack { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+  #nowArtist { color: var(--faint); font-size: 12px; font-weight: 300; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+  #progWrap { margin-top: 14px; }
+  #progBar { width: 100%; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  #progFill { height: 100%; width: 0%; background: var(--ink); border-radius: 2px; }
+  #progTimes { display: flex; justify-content: space-between; margin-top: 5px; color: var(--faint); font-size: 10px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  #controls { display: flex; align-items: center; justify-content: center; gap: 44px; margin-top: 18px; }
+  .sideBtn { font: inherit; color: var(--ink); background: none; border: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+  .sideBtn svg { width: 26px; height: 26px; fill: var(--ink); }
+  #playBtn { width: 64px; height: 64px; border-radius: 50%; background: var(--ink); border: none; display: flex; align-items: center; justify-content: center; }
+  #playBtn svg { width: 26px; height: 26px; fill: var(--paper); }
+  #playBtn:active { background: var(--red); }
+
+  #stats { display: flex; gap: 34px; margin-top: 20px; color: var(--faint); font-size: 10px; font-weight: 300; letter-spacing: 0.18em; font-variant-numeric: tabular-nums; justify-content: center; text-transform: lowercase; }
+  #stats b { color: var(--ink); font-weight: 400; }
+
+  .block { width: 100%; border-top: 1px solid var(--line); margin-top: 26px; padding-top: 12px; }
+  .blockTitle { font-size: 9px; font-weight: 400; letter-spacing: 0.3em; color: var(--faint); text-transform: lowercase; margin-bottom: 6px; }
+  .discRow { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .discRow:last-child { border-bottom: none; }
+  .dLeft { min-width: 0; flex: 1; }
+  .dName { font-size: 13px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dArtist { color: var(--faint); font-size: 11px; font-weight: 300; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .qBtn { font: inherit; font-size: 15px; font-weight: 300; color: var(--ink); flex: none; width: 34px; height: 34px; border-radius: 50%; background: none; border: 1px solid var(--line); }
+  .qBtn.done { color: var(--red); border-color: var(--red); }
+  #moreDisc { font: inherit; font-size: 10px; font-weight: 300; letter-spacing: 0.24em; color: var(--faint); background: none; border: none; padding: 10px 0 0; text-transform: lowercase; }
+  #stopBtn { margin: 26px auto 0; display: block; font: inherit; font-size: 10px; font-weight: 300; letter-spacing: 0.3em; text-indent: 0.3em; color: var(--faint); background: none; border: none; text-transform: lowercase; padding: 6px; }
+
+  /* ————— after: the run, remembered ————— */
+  #after { display: none; flex-direction: column; align-items: center; text-align: center; }
+  #afterTitle { font-size: 11px; font-weight: 300; letter-spacing: 0.34em; color: var(--faint); text-transform: lowercase; }
+  #afterBig { font-size: min(30vw, 120px); font-weight: 100; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 18px 0 2px; }
+  #afterSub { font-size: 10px; font-weight: 300; letter-spacing: 0.26em; color: var(--faint); text-transform: lowercase; }
+  #afterStats { display: flex; gap: 34px; margin-top: 30px; color: var(--faint); font-size: 11px; font-weight: 300; letter-spacing: 0.14em; font-variant-numeric: tabular-nums; text-transform: lowercase; }
+  #afterStats b { color: var(--ink); font-weight: 400; display: block; font-size: 20px; margin-bottom: 4px; }
+  #shareBtn {
+    margin-top: 44px; font: inherit; font-size: 12px; font-weight: 300; letter-spacing: 0.3em; text-indent: 0.3em;
+    color: var(--ink); background: none; border: 1px solid var(--ink); border-radius: 999px; padding: 15px 44px; text-transform: lowercase;
   }
-  #pulse.hit { background: var(--hot); transform: scale(1.9); box-shadow: 0 0 24px var(--hot); }
-  #spm {
-    font-size: min(38vw, 168px); font-weight: 800; line-height: 1;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink);
-  }
-  #spm.idlebeat { color: var(--dim); }
-  #spmLabel { color: var(--dim); letter-spacing: 0.28em; font-size: 13px; margin-top: 2px; }
-  #spark { width: min(78vw, 420px); height: 56px; margin-top: 26px; opacity: 0.9; }
-  #stats { display: flex; gap: 26px; margin-top: 18px; color: var(--dim); font-size: 12px; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
-  #stats b { color: var(--ink); font-weight: 600; }
-  #stopBtn {
-    margin-top: 34px; font: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.12em;
-    color: var(--dim); background: none; border: 1px solid #2a2836; border-radius: 999px; padding: 10px 28px;
-  }
-  footer { text-align: center; color: #3c3948; font-size: 10px; padding: 14px; letter-spacing: 0.06em; }
-  #demoBtn {
-    position: fixed; right: 14px; bottom: 14px; font-size: 10px; color: var(--dim);
-    background: none; border: 1px dashed #2a2836; border-radius: 6px; padding: 6px 10px;
-  }
+  #shareBtn:active { color: var(--red); border-color: var(--red); }
+  #againBtn { margin-top: 22px; font: inherit; font-size: 10px; font-weight: 300; letter-spacing: 0.3em; text-indent: 0.3em; color: var(--faint); background: none; border: none; text-transform: lowercase; padding: 6px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">RUN<em>DANCE</em></div>
-  <div class="proto">P1 · BEAT</div>
-</header>
-
 <main>
-  <section id="idle">
-    <h1>Find the beat<br>in your feet</h1>
-    <p>Put me in your hand or pocket and move — walk, jog, bounce. I'll show your steps-per-minute, live.</p>
-    <button id="startBtn">START</button>
+  <section id="gate">
+    <button id="runBtn">rundance</button>
+    <div id="gateSub"></div>
     <div class="err" id="err"></div>
   </section>
 
-  <section id="live">
-    <div id="pulse"></div>
-    <div id="spm">—</div>
-    <div id="spmLabel">STEPS / MIN</div>
-    <canvas id="spark" width="840" height="112"></canvas>
-    <div id="stats">
-      <span>steps <b id="stepCount">0</b></span>
-      <span>time <b id="clock">0:00</b></span>
-      <span>signal <b id="hz">–</b></span>
+  <section id="stride">
+    <div class="quiet">finding your stride</div>
+    <div id="strideSpm" class="faded">—</div>
+    <div id="strideHint">keep going</div>
+    <input type="range" id="slider" min="130" max="200" value="160">
+    <button id="lockNowBtn">begin at <span id="lockNum">—</span></button>
+  </section>
+
+  <section id="floor">
+    <div id="state">settle in</div>
+    <div id="spm" class="faded">—</div>
+    <div id="spmSub">steps each minute · with <span id="targetShow">–</span></div>
+
+    <div id="player">
+      <div id="nowTrack">…</div>
+      <div id="nowArtist"></div>
+      <div id="progWrap">
+        <div id="progBar"><div id="progFill"></div></div>
+        <div id="progTimes"><span id="tCur">0:00</span><span id="tTot">0:00</span></div>
+      </div>
+      <div id="controls">
+        <button class="sideBtn" id="prevBtn" aria-label="previous"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9.5 12z"/></svg></button>
+        <button id="playBtn" aria-label="play or pause">
+          <svg id="iconPlay" viewBox="0 0 24 24" style="display:none"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="iconPause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+        </button>
+        <button class="sideBtn" id="nextBtn" aria-label="next"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l10.5-7z"/></svg></button>
+      </div>
     </div>
-    <button id="stopBtn">STOP</button>
+
+    <div id="stats">
+      <span>in step <b id="lockPct">–</b></span>
+      <span><b id="clock">0:00</b></span>
+    </div>
+
+    <div class="block" id="discCard" style="display:none">
+      <div class="blockTitle">new, at your pace</div>
+      <div id="discList"></div>
+      <button id="moreDisc">a few more</button>
+    </div>
+
+    <button id="stopBtn">finish</button>
+  </section>
+
+  <section id="after">
+    <div id="afterTitle">the run, remembered</div>
+    <div id="afterBig">–</div>
+    <div id="afterSub">steps each minute, on average</div>
+    <div id="afterStats">
+      <span><b id="aInStep">–</b>in step</span>
+      <span><b id="aTime">–</b>minutes</span>
+      <span><b id="aSongs">–</b>songs</span>
+    </div>
+    <button id="shareBtn">share the log</button>
+    <button id="againBtn">again</button>
   </section>
 </main>
-
-<footer id="foot">motion stays on your phone · nothing is uploaded</footer>
-<button id="demoBtn" hidden>demo</button>
 
 <script>
 'use strict';
 
-/* ---------------- cadence estimation ----------------
-   Autocorrelation over a sliding window of acceleration magnitude.
-   More robust than naive peak counting: locks onto the periodicity
-   of the gait signal, with a harmonic check so we report steps,
-   not strides. */
-const WINDOW_S = 5;          // analysis window
-const MIN_SPM = 80, MAX_SPM = 240;
-const ENERGY_GATE = 0.35;    // m/s^2 std-dev below which we call it "still"
+/* ================== auth (PKCE, this page is its own redirect) ================== */
+const CLIENT_ID = '1ef4c2f856ac4bafa74cce2d2bd89c94';
+const AUTH_URL = 'https://accounts.spotify.com/authorize';
+const TOKEN_URL = 'https://accounts.spotify.com/api/token';
+const REDIRECT_URI = location.origin + location.pathname;
+const SCOPES = 'user-library-read user-read-playback-state user-modify-playback-state user-read-private user-top-read user-read-recently-played';
+const RB = 'https://api.reccobeats.com/v1';
+const $ = id => document.getElementById(id);
 
-const samples = [];          // {t (s), m (magnitude)}
-let stepCount = 0;
-let lastPeakT = -1;
-let recentMean = 0, recentStd = 0;
+const store = {
+  get access()  { return localStorage.getItem('rd_access'); },
+  get refresh() { return localStorage.getItem('rd_refresh'); },
+  get expires() { return parseInt(localStorage.getItem('rd_expires') || '0', 10); },
+  save(tok) {
+    localStorage.setItem('rd_access', tok.access_token);
+    if (tok.refresh_token) localStorage.setItem('rd_refresh', tok.refresh_token);
+    localStorage.setItem('rd_expires', String(Date.now() + (tok.expires_in - 60) * 1000));
+  },
+};
+function b64url(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function beginAuth() {
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
+  localStorage.setItem('rd_verifier', verifier);
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  const p = new URLSearchParams({
+    client_id: CLIENT_ID, response_type: 'code', redirect_uri: REDIRECT_URI,
+    scope: SCOPES, code_challenge_method: 'S256', code_challenge: b64url(digest),
+  });
+  location.href = AUTH_URL + '?' + p.toString();
+}
+async function tokenRequest(body) {
+  const res = await fetch(TOKEN_URL, {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error_description || data.error || ('token http ' + res.status));
+  return data;
+}
+async function ensureToken() {
+  if (store.access && Date.now() < store.expires) return store.access;
+  if (store.refresh) {
+    try {
+      store.save(await tokenRequest({ grant_type: 'refresh_token', refresh_token: store.refresh, client_id: CLIENT_ID }));
+      return store.access;
+    } catch (e) { /* fall through */ }
+  }
+  return null;
+}
+async function spotify(path, opts = {}) {
+  const token = await ensureToken();
+  if (!token) throw new Error('NOT_CONNECTED');
+  const init = { method: opts.method || 'GET', headers: { Authorization: 'Bearer ' + token } };
+  if (opts.body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
+  const res = await fetch('https://api.spotify.com/v1' + path, init);
+  if (res.status === 204) return null;
+  const data = await res.json().catch(() => null);
+  if (!res.ok) { const e = new Error(data?.error?.message || ('http ' + res.status)); e.status = res.status; throw e; }
+  return data;
+}
 
+/* ================== library: liked + top + recent, tagged ================== */
+let cache = {}, library = [], topRank = new Map(), libraryReady = false;
+
+async function loadLibrary(progressCb) {
+  try { cache = JSON.parse(localStorage.getItem('rd_bpm_cache') || '{}'); } catch (e) {}
+  library = []; topRank = new Map();
+
+  const candidates = new Map();   // spotifyId -> {id, name, artists}
+  let offset = 0, total = null;
+  while (total === null || offset < total) {
+    const page = await spotify('/me/tracks?limit=50&offset=' + offset);
+    total = page.total;
+    for (const it of page.items) if (it.track && it.track.id)
+      candidates.set(it.track.id, { id: it.track.id, name: it.track.name, artists: it.track.artists.map(a => a.name).join(', ') });
+    offset += 50;
+    progressCb && progressCb('listening to your library · ' + Math.min(offset, total) + ' of ' + total);
+  }
+  try {
+    const top = await spotify('/me/top/tracks?limit=50&time_range=medium_term');
+    (top.items || []).forEach((t, i) => {
+      topRank.set(t.id, 50 - i);
+      if (t.id && !candidates.has(t.id)) candidates.set(t.id, { id: t.id, name: t.name, artists: (t.artists || []).map(a => a.name).join(', ') });
+    });
+  } catch (e) {}
+  try {
+    const rec = await spotify('/me/player/recently-played?limit=50');
+    (rec.items || []).forEach(it => {
+      const t = it.track;
+      if (t && t.id && !candidates.has(t.id)) candidates.set(t.id, { id: t.id, name: t.name, artists: (t.artists || []).map(a => a.name).join(', ') });
+    });
+  } catch (e) {}
+
+  // tag whatever the cache doesn't know yet
+  const needTag = [...candidates.keys()].filter(id => !cache[id]);
+  for (let i = 0; i < needTag.length; i += 35) {
+    progressCb && progressCb('finding the beat in them · ' + Math.min(i + 35, needTag.length) + ' of ' + needTag.length);
+    try {
+      const ids = needTag.slice(i, i + 35);
+      const r = await fetch(RB + '/track?ids=' + ids.join(','));
+      if (!r.ok) continue;
+      const content = (await r.json()).content || [];
+      const rbToSp = new Map(); const rbIds = [];
+      for (const c of content) {
+        const m = (c.href || '').match(/track\/([A-Za-z0-9]+)/);
+        if (m) { rbToSp.set(c.id, m[1]); rbIds.push(c.id); }
+      }
+      if (!rbIds.length) continue;
+      const fr = await fetch(RB + '/audio-features?ids=' + rbIds.join(','));
+      if (!fr.ok) continue;
+      for (const f of ((await fr.json()).content || [])) {
+        const sid = rbToSp.get(f.id);
+        if (sid && typeof f.tempo === 'number' && f.tempo > 0)
+          cache[sid] = { tempo: f.tempo, energy: f.energy, dance: f.danceability };
+      }
+    } catch (e) { /* partial is fine */ }
+  }
+  try { localStorage.setItem('rd_bpm_cache', JSON.stringify(cache)); } catch (e) {}
+
+  for (const c of candidates.values()) if (cache[c.id])
+    library.push({ ...c, tempo: cache[c.id].tempo, energy: cache[c.id].energy ?? 0.5 });
+  libraryReady = true;
+  return true;
+}
+
+function stepGridOf(tempo) {
+  let s = tempo;
+  while (s < 110) s *= 2;
+  while (s >= 220) s /= 2;
+  return s;
+}
+function buildSet(target) {
+  const score = t => Math.abs(t.grid - target) - (topRank.get(t.id) || 0) * 0.05;
+  return library
+    .map(t => ({ ...t, grid: stepGridOf(t.tempo) }))
+    .filter(t => Math.abs(t.grid - target) <= target * 0.06)
+    .sort((a, b) => score(a) - score(b));
+}
+
+/* ================== cadence ================== */
+const WINDOW_S = 5, MIN_SPM = 80, MAX_SPM = 240, ENERGY_GATE = 0.35;
+const samples = [];
 function addSample(t, m) {
   samples.push({ t, m });
   while (samples.length && t - samples[0].t > WINDOW_S + 1) samples.shift();
-
-  // lightweight per-step peak flash + counter (not the spm source)
-  const n = samples.length;
-  if (n > 4) {
-    const a = samples[n - 3], b = samples[n - 2], c = samples[n - 1];
-    if (b.m > a.m && b.m > c.m && b.m - recentMean > Math.max(0.6 * recentStd, 0.25)
-        && (lastPeakT < 0 || b.t - lastPeakT > 0.24)) {
-      lastPeakT = b.t;
-      stepCount++;
-      flashPulse();
-    }
-  }
 }
-
 function estimateSpm() {
   if (samples.length < 60) return null;
   const t1 = samples[samples.length - 1].t;
   const win = samples.filter(s => t1 - s.t <= WINDOW_S);
   if (win.length < 60 || t1 - win[0].t < 2.5) return null;
-
-  // resample to uniform 50 Hz
   const RATE = 50, dt = 1 / RATE;
-  const t0 = win[0].t, dur = t1 - t0, N = Math.floor(dur * RATE);
+  const t0 = win[0].t, N = Math.floor((t1 - t0) * RATE);
   const x = new Float32Array(N);
   let j = 0;
   for (let i = 0; i < N; i++) {
@@ -162,18 +342,11 @@ function estimateSpm() {
     const f = b.t > a.t ? (tt - a.t) / (b.t - a.t) : 0;
     x[i] = a.m + (b.m - a.m) * f;
   }
-
-  // demean, measure energy
   let mean = 0; for (let i = 0; i < N; i++) mean += x[i]; mean /= N;
   let varsum = 0;
   for (let i = 0; i < N; i++) { x[i] -= mean; varsum += x[i] * x[i]; }
-  const std = Math.sqrt(varsum / N);
-  recentMean = mean; recentStd = std;
-  if (std < ENERGY_GATE) return { spm: null, still: true };
-
-  // normalized autocorrelation over step-period lags
-  const minLag = Math.floor(RATE * 60 / MAX_SPM);   // fastest cadence
-  const maxLag = Math.ceil(RATE * 60 / MIN_SPM);    // slowest cadence
+  if (Math.sqrt(varsum / N) < ENERGY_GATE) return { spm: null, still: true };
+  const minLag = Math.floor(RATE * 60 / MAX_SPM), maxLag = Math.ceil(RATE * 60 / MIN_SPM);
   if (N < maxLag * 2) return null;
   const ac = new Float32Array(maxLag + 1);
   for (let lag = minLag; lag <= maxLag; lag++) {
@@ -182,177 +355,425 @@ function estimateSpm() {
     ac[lag] = s / (varsum || 1);
   }
   let bestLag = -1, bestV = 0;
-  for (let lag = minLag; lag <= maxLag; lag++) {
-    if (ac[lag] > bestV) { bestV = ac[lag]; bestLag = lag; }
-  }
+  for (let lag = minLag; lag <= maxLag; lag++) if (ac[lag] > bestV) { bestV = ac[lag]; bestLag = lag; }
   if (bestLag < 0 || bestV < 0.25) return null;
-
-  // harmonic check: if half the period is also strongly periodic,
-  // we locked onto the stride — report the step instead.
   const half = Math.round(bestLag / 2);
   if (half >= minLag && ac[half] > 0.6 * bestV) bestLag = half;
-
-  return { spm: 60 * RATE / bestLag, still: false, conf: bestV };
+  return { spm: 60 * RATE / bestLag, still: false };
 }
-
-/* ---------------- UI ---------------- */
-const $ = id => document.getElementById(id);
-const idleEl = $('idle'), liveEl = $('live'), spmEl = $('spm');
-const sparkEl = $('spark'), sctx = sparkEl.getContext('2d');
-let smoothSpm = null, startTime = 0, sampleTimes = [], history = [];
-let running = false, wakeLock = null;
-
-function flashPulse() {
-  const p = $('pulse');
-  p.classList.add('hit');
-  setTimeout(() => p.classList.remove('hit'), 90);
-}
-
 function onMotion(e) {
   const a = (e.acceleration && e.acceleration.x !== null) ? e.acceleration : e.accelerationIncludingGravity;
   if (!a || a.x === null) return;
-  const t = performance.now() / 1000;
-  addSample(t, Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z));
-  sampleTimes.push(t);
-  if (sampleTimes.length > 120) sampleTimes.shift();
+  addSample(performance.now() / 1000, Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z));
 }
 
-function drawSpark() {
-  const w = sparkEl.width, h = sparkEl.height;
-  sctx.clearRect(0, 0, w, h);
-  if (history.length < 2) return;
-  const lo = 70, hi = 220;
-  sctx.beginPath();
-  sctx.lineWidth = 4;
-  sctx.strokeStyle = '#ff3d81';
-  sctx.lineJoin = 'round';
-  let started = false;
-  const n = history.length, span = 60 * 1000; // 60s view
-  const tNow = Date.now();
-  for (let i = 0; i < n; i++) {
-    const p = history[i];
-    if (tNow - p.t > span) continue;
-    const px = w - ((tNow - p.t) / span) * w;
-    if (p.v === null) { started = false; continue; }
-    const py = h - ((Math.min(Math.max(p.v, lo), hi) - lo) / (hi - lo)) * h;
-    if (!started) { sctx.moveTo(px, py); started = true; }
-    else sctx.lineTo(px, py);
+/* ================== the run log ================== */
+let runLog = null, lastLogSave = 0;
+function logStart(target) {
+  runLog = {
+    version: 3,
+    startedAt: new Date().toISOString(),
+    target0: target,
+    retargets: [],       // {sec, from, to}
+    cadence: [],         // [sec, spm|null] at ~1s
+    songs: [],           // {sec, id, name, artists, grid}
+    skips: [],           // sec
+    queuedDiscoveries: [],  // {sec, id, name}
+    endedAt: null,
+  };
+}
+function logCadence(sec, spm) {
+  if (!runLog) return;
+  const last = runLog.cadence[runLog.cadence.length - 1];
+  if (!last || sec - last[0] >= 1) runLog.cadence.push([Math.round(sec * 10) / 10, spm]);
+  if (performance.now() - lastLogSave > 20000) {   // survive crashes
+    lastLogSave = performance.now();
+    try { localStorage.setItem('rd_run_active', JSON.stringify(runLog)); } catch (e) {}
   }
-  sctx.stroke();
+}
+function logSong(sec, item, grid) {
+  if (!runLog) return;
+  const last = runLog.songs[runLog.songs.length - 1];
+  if (last && last.id === item.id) return;
+  runLog.songs.push({ sec: Math.round(sec), id: item.id, name: item.name,
+    artists: item.artists.map(a => a.name).join(', '), grid: grid ? Math.round(grid) : null });
+}
+function finishLog(summary) {
+  if (!runLog) return null;
+  runLog.endedAt = new Date().toISOString();
+  Object.assign(runLog, summary);
+  try {
+    const runs = JSON.parse(localStorage.getItem('rd_runs') || '[]');
+    runs.push(runLog);
+    while (runs.length > 20) runs.shift();
+    localStorage.setItem('rd_runs', JSON.stringify(runs));
+    localStorage.removeItem('rd_run_active');
+  } catch (e) {}
+  const done = runLog; runLog = null;
+  return done;
 }
 
-function tick() {
+/* ================== relentless playback ================== */
+let wantPlayback = null, wakeTimer = null, openedSpotify = false;
+async function tryPlayOnce(uris) {
+  try { await spotify('/me/player/play', { method: 'PUT', body: { uris } }); return true; }
+  catch (e) { if (!(e.status === 404 || /no active device/i.test(e.message))) throw e; }
+  const d = await spotify('/me/player/devices').catch(() => null);
+  const dev = (d?.devices || []).find(x => x.type === 'Smartphone') || (d?.devices || [])[0];
+  if (dev) {
+    try { await spotify('/me/player/play?device_id=' + encodeURIComponent(dev.id), { method: 'PUT', body: { uris } }); return true; }
+    catch (e) { }
+  }
+  return false;
+}
+function startPlayback(uris) {
+  wantPlayback = uris;
+  openedSpotify = false;
+  const attempt = async (n) => {
+    if (!wantPlayback) return;
+    let ok = false;
+    try { ok = await tryPlayOnce(wantPlayback); }
+    catch (e) { $('err').textContent = 'the decks said: ' + e.message; wantPlayback = null; return; }
+    if (ok) { wantPlayback = null; $('strideHint').textContent = ''; setTimeout(pollPlayer, 400); return; }
+    if (!openedSpotify && n >= 1) {
+      openedSpotify = true;
+      const first = (wantPlayback[0] || '').replace('spotify:track:', '');
+      $('state').textContent = 'tap play in spotify, then return';
+      location.href = 'spotify:track:' + first;
+    }
+    wakeTimer = setTimeout(() => attempt(n + 1), 2500);
+  };
+  attempt(0);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && wantPlayback) { clearTimeout(wakeTimer); startPlayback(wantPlayback); }
+  if (document.visibilityState === 'visible' && (running || phase === 'stride')) requestWake();
+});
+
+/* ================== flow ================== */
+let phase = 'gate', target = 160, smoothSpm = null;
+let running = false, wakeLock = null, startTime = 0, lockedTicks = 0, totalTicks = 0;
+let nowStepGrid = null, stableSince = null, sliderTouched = false;
+let currentSet = [];
+
+async function startRun() {
+  $('err').textContent = '';
+  if (!(await ensureToken())) { beginAuth(); return; }
+  if (!libraryReady) {
+    try { await loadLibrary(msg => { $('gateSub').textContent = msg; }); }
+    catch (e) { $('err').textContent = 'library: ' + e.message; return; }
+    $('gateSub').textContent = '';
+  }
+  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      const res = await DeviceMotionEvent.requestPermission();
+      if (res !== 'granted') { $('err').textContent = 'the phone kept its sensors to itself — reload to ask again.'; return; }
+    } catch (e) { $('err').textContent = 'motion: ' + e.message; return; }
+  }
+  window.addEventListener('devicemotion', onMotion);
+  phase = 'stride';
+  $('gate').style.display = 'none';
+  $('after').style.display = 'none';
+  $('stride').style.display = 'flex';
+  requestWake();
+  strideTick();
+}
+
+function strideTick() {
+  if (phase !== 'stride') return;
+  const est = estimateSpm();
+  if (est && est.spm) {
+    smoothSpm = smoothSpm === null ? est.spm : smoothSpm * 0.7 + est.spm * 0.3;
+    const n = Math.round(smoothSpm);
+    $('strideSpm').textContent = n;
+    $('strideSpm').classList.remove('faded');
+    if (!sliderTouched) { $('slider').value = n; $('lockNum').textContent = n; }
+    if (Math.abs(smoothSpm - parseInt($('slider').value, 10)) <= 3 && !sliderTouched) {
+      if (!stableSince) stableSince = performance.now();
+      else if (performance.now() - stableSince > 8000) { lockTarget(); return; }
+    } else stableSince = null;
+    $('strideHint').textContent = stableSince ? 'yes — this one' : 'keep going';
+  } else {
+    $('strideSpm').textContent = '—';
+    $('strideSpm').classList.add('faded');
+    stableSince = null;
+    $('strideHint').textContent = 'keep going';
+  }
+  setTimeout(strideTick, 300);
+}
+
+function lockTarget() {
+  target = parseInt($('slider').value, 10);
+  currentSet = buildSet(target);
+  if (currentSet.length < 3) {
+    phase = 'gate';
+    $('stride').style.display = 'none';
+    $('gate').style.display = 'flex';
+    $('err').textContent = 'too few songs near ' + target + ' — another pace, perhaps.';
+    return;
+  }
+  phase = 'floor';
+  $('stride').style.display = 'none';
+  $('floor').style.display = 'flex';
+  $('targetShow').textContent = target;
+  running = true;
+  startTime = performance.now() / 1000;
+  lockedTicks = 0; totalTicks = 0;
+  logStart(target);
+  startPlayback(currentSet.slice(0, 50).map(t => 'spotify:track:' + t.id));
+  floorTick();
+  pollPlayer();
+  discover(true);
+}
+
+/* ================== player state + progress ================== */
+let pollTimer = null, prog = { ms: 0, total: 0, playing: false, at: 0 };
+async function pollPlayer() {
+  if (!running) return;
+  try {
+    const p = await spotify('/me/player');
+    if (p && p.item) {
+      $('nowTrack').textContent = p.item.name;
+      $('nowArtist').textContent = p.item.artists.map(a => a.name).join(', ');
+      const known = cache[p.item.id];
+      nowStepGrid = known ? stepGridOf(known.tempo) : null;
+      prog = { ms: p.progress_ms || 0, total: p.item.duration_ms || 0, playing: !!p.is_playing, at: performance.now() };
+      $('iconPlay').style.display = p.is_playing ? 'none' : 'block';
+      $('iconPause').style.display = p.is_playing ? 'block' : 'none';
+      logSong((performance.now() / 1000) - startTime, p.item, nowStepGrid);
+    }
+  } catch (e) { /* transient */ }
+  pollTimer = setTimeout(pollPlayer, 4000);
+}
+function fmtMs(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+function progressTick() {
+  const cur = prog.playing ? prog.ms + (performance.now() - prog.at) : prog.ms;
+  if (prog.total > 0) {
+    $('progFill').style.width = Math.min(100, 100 * cur / prog.total) + '%';
+    $('tCur').textContent = fmtMs(cur);
+    $('tTot').textContent = fmtMs(prog.total);
+  }
+  setTimeout(progressTick, 500);
+}
+progressTick();
+
+/* ================== the dj reads the floor ================== */
+const RETARGET_WINDOW_MS = 25000, RETARGET_DIFF = 4, RETARGET_COOLDOWN_MS = 45000;
+let cadHist = [], lastRetarget = 0;
+function maybeFollowTheFloor(display) {
+  const now = performance.now();
+  cadHist.push({ t: now, v: display });
+  while (cadHist.length && now - cadHist[0].t > RETARGET_WINDOW_MS) cadHist.shift();
+  if (now - lastRetarget < RETARGET_COOLDOWN_MS) return;
+  if (cadHist.length < 40) return;
+  if (now - cadHist[0].t < RETARGET_WINDOW_MS - 2000) return;
+  const avg = cadHist.reduce((s, x) => s + x.v, 0) / cadHist.length;
+  if (Math.abs(avg - target) <= RETARGET_DIFF) return;
+  const newTarget = Math.round(avg);
+  const newSet = buildSet(newTarget);
+  if (newSet.length < 3) return;
+  const sec = (now / 1000) - startTime;
+  if (runLog) runLog.retargets.push({ sec: Math.round(sec), from: target, to: newTarget });
+  lastRetarget = now;
+  target = newTarget;
+  currentSet = newSet;
+  cadHist = [];
+  $('targetShow').textContent = target;
+  $('state').textContent = 'following you';
+  startPlayback(currentSet.slice(0, 50).map(t => 'spotify:track:' + t.id));
+  discover(true);
+}
+
+function gridDelta(spm, grid) {
+  const cands = [spm, spm * 2, spm / 2];
+  let best = Infinity;
+  for (const c of cands) if (Math.abs(c - grid) < Math.abs(best)) best = c - grid;
+  return best;
+}
+
+function floorTick() {
   if (!running) return;
   const est = estimateSpm();
   let display = null;
   if (est && est.spm) {
     smoothSpm = smoothSpm === null ? est.spm : smoothSpm * 0.7 + est.spm * 0.3;
     display = Math.round(smoothSpm);
-  } else if (est && est.still) {
-    smoothSpm = null;
-  }
-  spmEl.textContent = display !== null ? display : '—';
-  spmEl.classList.toggle('idlebeat', display === null);
-  history.push({ t: Date.now(), v: display });
-  if (history.length > 400) history.shift();
-  drawSpark();
+    maybeFollowTheFloor(display);
+  } else if (est && est.still) smoothSpm = null;
 
-  $('stepCount').textContent = stepCount;
-  const el = Math.floor((performance.now() / 1000) - startTime);
-  $('clock').textContent = Math.floor(el / 60) + ':' + String(el % 60).padStart(2, '0');
-  const st = sampleTimes;
-  $('hz').textContent = st.length > 10 ? Math.round((st.length - 1) / (st[st.length - 1] - st[0])) + ' Hz' : '–';
+  $('spm').textContent = display !== null ? display : '—';
+  $('spm').classList.toggle('faded', display === null);
 
-  setTimeout(tick, 300);
+  const sec = (performance.now() / 1000) - startTime;
+  logCadence(sec, display);
+
+  const st = $('state');
+  st.classList.remove('instep', 'near');
+  let word = 'settle in';
+  const grid = nowStepGrid || target;
+  if (display !== null) {
+    totalTicks++;
+    const d = gridDelta(display, grid);
+    if (Math.abs(d) <= 3)      { st.classList.add('instep'); word = 'in step'; lockedTicks++; }
+    else if (Math.abs(d) <= 8) { st.classList.add('near');   word = d > 0 ? 'softer' : 'a little quicker'; }
+    else                       { word = 'listen for it'; }
+  } else if (est && est.still) word = 'move';
+  st.textContent = word;
+
+  $('lockPct').textContent = totalTicks ? Math.round(100 * lockedTicks / totalTicks) + '%' : '–';
+  $('clock').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec) % 60).padStart(2, '0');
+  setTimeout(floorTick, 300);
 }
 
-async function start() {
-  $('err').textContent = '';
-  if (!window.isSecureContext) {
-    $('err').textContent = 'Motion needs a secure (https) page — open the https link.';
-    return;
-  }
-  if (typeof DeviceMotionEvent === 'undefined') {
-    $('err').textContent = 'This browser has no motion sensor access.';
-    return;
-  }
+/* ================== discovery ================== */
+let discSeen = new Set(), discSeedShift = 0;
+async function discover(fresh) {
   try {
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
-      const res = await DeviceMotionEvent.requestPermission();
-      if (res !== 'granted') { $('err').textContent = 'Motion permission was declined. Reload to try again.'; return; }
-    }
-  } catch (e) {
-    $('err').textContent = 'Motion permission failed: ' + e.message;
-    return;
-  }
-  window.addEventListener('devicemotion', onMotion);
-  goLive();
+    if (fresh) { discSeen = new Set(); discSeedShift = 0; $('discList').innerHTML = ''; }
+    const seedsPool = currentSet.slice(discSeedShift, discSeedShift + 5);
+    discSeedShift += 5;
+    if (!seedsPool.length) return;
+    const r = await fetch(RB + '/track?ids=' + seedsPool.map(t => t.id).join(','));
+    if (!r.ok) return;
+    const seedIds = ((await r.json()).content || []).map(c => c.id).slice(0, 5);
+    if (!seedIds.length) return;
+    const musical = target >= 120 ? target / 2 : target;
+    const rr = await fetch(RB + '/track/recommendation?size=20&seeds=' + seedIds.join(',') + '&tempo=' + Math.round(musical));
+    if (!rr.ok) return;
+    const recs = ((await rr.json()).content || [])
+      .map(c => ({ name: c.trackTitle, artists: (c.artists || []).map(a => a.name).join(', '),
+                   spid: (c.href || '').match(/track\/([A-Za-z0-9]+)/)?.[1] }))
+      .filter(x => x.spid && !discSeen.has(x.spid) && !library.some(t => t.id === x.spid))
+      .slice(0, 6);
+    if (!recs.length) return;
+    recs.forEach(x => discSeen.add(x.spid));
+    $('discList').insertAdjacentHTML('beforeend', recs.map(x =>
+      '<div class="discRow"><div class="dLeft"><div class="dName">' + esc(x.name) + '</div><div class="dArtist">' + esc(x.artists) + '</div></div>' +
+      '<button class="qBtn" data-spid="' + x.spid + '" data-name="' + esc(x.name) + '">+</button></div>').join(''));
+    $('discCard').style.display = 'block';
+    $('discList').querySelectorAll('.qBtn:not([data-wired])').forEach(b => {
+      b.dataset.wired = '1';
+      b.addEventListener('click', async () => {
+        try {
+          await spotify('/me/player/queue?uri=' + encodeURIComponent('spotify:track:' + b.dataset.spid), { method: 'POST' });
+          b.textContent = '·'; b.classList.add('done');
+          if (runLog) runLog.queuedDiscoveries.push({ sec: Math.round((performance.now() / 1000) - startTime), id: b.dataset.spid, name: b.dataset.name });
+        } catch (e) { b.textContent = '×'; }
+      });
+    });
+  } catch (e) { /* optional */ }
 }
+$('moreDisc').addEventListener('click', () => discover(false));
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
 
-function goLive() {
-  idleEl.style.display = 'none';
-  liveEl.style.display = 'flex';
-  running = true;
-  startTime = performance.now() / 1000;
-  stepCount = 0; history = []; smoothSpm = null;
-  requestWake();
-  tick();
-}
-
-async function requestWake() {
-  try {
-    wakeLock = await navigator.wakeLock?.request('screen');
-  } catch (e) { /* fine — worst case screen dims */ }
-}
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && running) requestWake();
-});
-
-function stop() {
-  running = false;
+/* ================== finish → after ================== */
+let lastRun = null;
+function finishRun() {
+  const sec = (performance.now() / 1000) - startTime;
+  running = false; phase = 'after'; wantPlayback = null;
+  clearTimeout(wakeTimer); clearTimeout(pollTimer);
   window.removeEventListener('devicemotion', onMotion);
-  if (demoTimer) { clearInterval(demoTimer); demoTimer = null; }
+  spotify('/me/player/pause', { method: 'PUT' }).catch(() => {});
   wakeLock?.release().catch(() => {});
-  liveEl.style.display = 'none';
-  idleEl.style.display = 'flex';
+
+  const cad = (runLog?.cadence || []).filter(c => c[1] !== null).map(c => c[1]);
+  const avg = cad.length ? Math.round(cad.reduce((s, v) => s + v, 0) / cad.length) : 0;
+  const inStep = totalTicks ? Math.round(100 * lockedTicks / totalTicks) : 0;
+  lastRun = finishLog({
+    durationSec: Math.round(sec),
+    avgSpm: avg,
+    inStepPct: inStep,
+    songCount: (runLog?.songs || []).length,
+  });
+
+  $('floor').style.display = 'none';
+  $('after').style.display = 'flex';
+  $('afterBig').textContent = avg || '–';
+  $('aInStep').textContent = inStep + '%';
+  $('aTime').textContent = Math.round(sec / 60);
+  $('aSongs').textContent = lastRun ? lastRun.songs.length : '–';
 }
 
-$('startBtn').addEventListener('click', start);
-$('stopBtn').addEventListener('click', stop);
-
-/* ---------------- demo signal (desktop testing) ---------------- */
-let demoTimer = null;
-const isTouch = 'ontouchstart' in window;
-if (!isTouch) $('demoBtn').hidden = false;
-$('demoBtn').addEventListener('click', () => {
-  if (demoTimer) return;
-  // Generate a 50 Hz synthetic gait signal. Robust to timer throttling:
-  // each tick emits however many samples wall-clock says are due, so the
-  // signal stays correct even if the browser clamps setInterval.
-  const DEMO_DT = 0.02;
-  let phase = 0;
-  const startT = performance.now() / 1000;
-  let emittedUntil = startT;
-  demoTimer = setInterval(() => {
-    const now = performance.now() / 1000;
-    let n = 0;
-    while (emittedUntil + DEMO_DT <= now && n < 300) {
-      emittedUntil += DEMO_DT; n++;
-      const t = emittedUntil - startT;
-      // wandering cadence: 162 spm baseline, slow drift, "standing still" at 20-25s
-      const spm = 162 + 6 * Math.sin(t / 9);
-      phase += 2 * Math.PI * (spm / 60) * DEMO_DT;
-      const still = t > 20 && t < 25;
-      const m = still
-        ? 0.05 * (Math.random() - 0.5)
-        : Math.sin(phase) * 2.2 + Math.sin(2 * phase) * 0.7 + (Math.random() - 0.5) * 0.6;
-      addSample(emittedUntil, 9.81 + m);
-      sampleTimes.push(emittedUntil);
-      if (sampleTimes.length > 120) sampleTimes.shift();
+async function shareLog() {
+  const run = lastRun || (JSON.parse(localStorage.getItem('rd_runs') || '[]').pop());
+  if (!run) return;
+  const text = JSON.stringify(run, null, 1);
+  const fname = 'rundance-' + (run.startedAt || '').slice(0, 16).replace(/[:T]/g, '-') + '.json';
+  try {
+    const file = new File([text], fname, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'rundance log' });
+      return;
     }
-  }, 40);
-  goLive();
+  } catch (e) { /* fall through */ }
+  try {
+    await navigator.clipboard.writeText(text);
+    $('shareBtn').textContent = 'copied';
+    setTimeout(() => { $('shareBtn').textContent = 'share the log'; }, 2500);
+  } catch (e) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    a.download = fname; a.click();
+  }
+}
+
+/* ================== controls ================== */
+async function requestWake() {
+  try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (e) {}
+}
+$('runBtn').addEventListener('click', startRun);
+$('slider').addEventListener('input', () => { sliderTouched = true; stableSince = null; $('lockNum').textContent = $('slider').value; });
+$('lockNowBtn').addEventListener('click', lockTarget);
+$('nextBtn').addEventListener('click', () => {
+  if (runLog) runLog.skips.push(Math.round((performance.now() / 1000) - startTime));
+  spotify('/me/player/next', { method: 'POST' }).catch(() => {});
+  setTimeout(pollPlayer, 500);
 });
+$('prevBtn').addEventListener('click', () => { spotify('/me/player/previous', { method: 'POST' }).catch(() => {}); setTimeout(pollPlayer, 500); });
+$('playBtn').addEventListener('click', async () => {
+  try {
+    if (prog.playing) await spotify('/me/player/pause', { method: 'PUT' });
+    else await spotify('/me/player/play', { method: 'PUT' });
+    setTimeout(pollPlayer, 300);
+  } catch (e) {}
+});
+$('stopBtn').addEventListener('click', finishRun);
+$('shareBtn').addEventListener('click', shareLog);
+$('againBtn').addEventListener('click', () => {
+  $('after').style.display = 'none';
+  $('gate').style.display = 'flex';
+  phase = 'gate';
+  smoothSpm = null; sliderTouched = false; stableSince = null; cadHist = [];
+});
+
+/* ================== boot ================== */
+(async () => {
+  const q = new URLSearchParams(location.search);
+  if (q.get('code')) {
+    try {
+      const verifier = localStorage.getItem('rd_verifier');
+      store.save(await tokenRequest({
+        grant_type: 'authorization_code', code: q.get('code'),
+        redirect_uri: REDIRECT_URI, client_id: CLIENT_ID, code_verifier: verifier,
+      }));
+      history.replaceState(null, '', REDIRECT_URI);
+    } catch (e) { $('err').textContent = 'spotify said: ' + e.message; }
+  } else if (q.get('error')) {
+    $('err').textContent = 'spotify said: ' + q.get('error');
+    history.replaceState(null, '', REDIRECT_URI);
+  }
+  if (await ensureToken()) {
+    $('gateSub').textContent = '';
+    loadLibrary(msg => { $('gateSub').textContent = msg; })
+      .then(() => { $('gateSub').textContent = ''; })
+      .catch(() => {});
+  } else {
+    $('gateSub').textContent = 'first touch connects spotify';
+  }
+})();
 </script>
 </body>
 </html>

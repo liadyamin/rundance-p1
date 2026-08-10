@@ -1,0 +1,11 @@
+{
+  "name": "rundance",
+  "short_name": "rundance",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "start_url": ".",
+  "icons": [
+    { "src": "icon.png", "sizes": "360x360", "type": "image/png" }
+  ]
+}
