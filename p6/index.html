@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>RunDance</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --ink: #f4f2ef;
+    --dim: #6b6878;
+    --hot: #ff3d81;
+    --warm: #ffb03d;
+    --ok: #3dd68c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    display: flex; flex-direction: column;
+    user-select: none; -webkit-user-select: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    transition: background 0.5s;
+  }
+  body.locked { background: #1c0714; }
+  body.close  { background: #170f06; }
+  header { display: flex; justify-content: space-between; align-items: baseline; padding: 20px 24px 0; }
+  .brand { font-weight: 800; letter-spacing: 0.16em; font-size: 14px; }
+  .brand em { font-style: normal; color: var(--hot); }
+  .proto { color: var(--dim); font-size: 11px; letter-spacing: 0.1em; }
+
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 0 24px 20px; width: 100%; max-width: 560px; margin: 0 auto; }
+
+  section { width: 100%; }
+  #gate, #stride { display: flex; flex-direction: column; align-items: center; gap: 24px; text-align: center; }
+  #gate h1 { font-size: 34px; font-weight: 800; line-height: 1.2; }
+  #gate p { color: var(--dim); font-size: 15px; line-height: 1.5; max-width: 320px; }
+  #poolLine { font-size: 13px; color: var(--dim); min-height: 18px; }
+  #runBtn {
+    font: inherit; font-size: 20px; font-weight: 800; letter-spacing: 0.1em;
+    color: var(--bg); background: linear-gradient(135deg, var(--hot), var(--warm));
+    border: none; border-radius: 999px; padding: 22px 66px;
+    box-shadow: 0 0 46px rgba(255, 61, 129, 0.4);
+  }
+  #runBtn:active { transform: scale(0.97); }
+  .err { color: var(--warm); font-size: 13px; max-width: 330px; line-height: 1.45; word-break: break-word; }
+  .err a { color: var(--warm); }
+
+  #stride { display: none; }
+  #strideWord { font-size: 15px; font-weight: 800; letter-spacing: 0.3em; color: var(--warm); }
+  #strideSpm { font-size: min(36vw, 156px); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  #strideSpm.faded { color: var(--dim); }
+  #strideHint { color: var(--dim); font-size: 13px; }
+  #slider { width: min(80vw, 380px); accent-color: var(--hot); }
+  #lockNowBtn {
+    font: inherit; font-size: 14px; font-weight: 800; letter-spacing: 0.08em;
+    color: var(--bg); background: linear-gradient(135deg, var(--hot), var(--warm));
+    border: none; border-radius: 999px; padding: 14px 40px;
+  }
+
+  #floor { display: none; flex-direction: column; align-items: center; }
+  #state { font-size: 15px; font-weight: 800; letter-spacing: 0.3em; color: var(--dim); margin-bottom: 2px; min-height: 20px; text-align: center; }
+  body.locked #state { color: var(--hot); text-shadow: 0 0 18px rgba(255,61,129,0.6); }
+  body.close  #state { color: var(--warm); }
+  #spm { font-size: min(32vw, 142px); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; text-align: center; }
+  #spm.faded { color: var(--dim); }
+  #spmLabel { color: var(--dim); letter-spacing: 0.28em; font-size: 11px; margin-top: 2px; text-align: center; }
+
+  .card { width: 100%; background: #12101a; border: 1px solid #221f2e; border-radius: 18px; padding: 14px 18px; margin-top: 18px; }
+  .cardTitle { color: var(--dim); font-size: 10px; letter-spacing: 0.2em; margin-bottom: 8px; }
+  #nowTrack { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #nowArtist { color: var(--dim); font-size: 12px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #nowBeat { font-size: 12px; color: var(--warm); margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+  .discRow { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #1a1725; }
+  .discRow:last-child { border-bottom: none; }
+  .dLeft { min-width: 0; flex: 1; }
+  .dName { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dArtist { color: var(--dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .qBtn {
+    font: inherit; font-size: 16px; color: var(--ink); flex: none;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: #1a1725; border: 1px solid #2a2836;
+  }
+  .qBtn.done { color: var(--ok); border-color: var(--ok); }
+
+  #controls { display: flex; gap: 14px; margin-top: 16px; justify-content: center; }
+  .tBtn {
+    font: inherit; font-size: 20px; color: var(--ink);
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #1a1725; border: 1px solid #2a2836;
+  }
+  .tBtn:active { border-color: var(--hot); }
+  #stats { display: flex; gap: 24px; margin-top: 14px; color: var(--dim); font-size: 12px; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; justify-content: center; }
+  #stats b { color: var(--ink); font-weight: 600; }
+  #stopBtn {
+    margin: 22px auto 0; display: block; font: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.12em;
+    color: var(--dim); background: none; border: 1px solid #2a2836; border-radius: 999px; padding: 10px 28px;
+  }
+  footer { text-align: center; color: #3c3948; font-size: 10px; padding: 12px; letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">RUN<em>DANCE</em></div>
+  <div class="proto">P6 · RUN</div>
+</header>
+
+<main>
+  <section id="gate">
+    <h1>Just run</h1>
+    <p>Tap once and go. I'll read your stride, find your number, and play your music on it — automatically.</p>
+    <div id="poolLine">warming up…</div>
+    <button id="runBtn">RUN</button>
+    <div class="err" id="err"></div>
+  </section>
+
+  <section id="stride">
+    <div id="strideWord">FIND YOUR STRIDE</div>
+    <div id="strideSpm" class="faded">—</div>
+    <div id="strideHint">just run — I'm reading your feet</div>
+    <input type="range" id="slider" min="130" max="200" value="160">
+    <button id="lockNowBtn">LOCK <span id="lockNum">—</span> — DROP THE MUSIC</button>
+  </section>
+
+  <section id="floor">
+    <div id="state">DROP IN</div>
+    <div id="spm" class="faded">—</div>
+    <div id="spmLabel">YOUR FEET · TARGET <span id="targetShow">–</span></div>
+
+    <div class="card">
+      <div class="cardTitle">NOW ON THE DECKS</div>
+      <div id="nowTrack">starting…</div>
+      <div id="nowArtist"></div>
+      <div id="nowBeat"></div>
+    </div>
+
+    <div class="card" id="discCard" style="display:none">
+      <div class="cardTitle">NEW FOR YOUR GROOVE · TAP + TO QUEUE</div>
+      <div id="discList"></div>
+    </div>
+
+    <div id="controls">
+      <button class="tBtn" id="pauseBtn">⏯</button>
+      <button class="tBtn" id="skipBtn">⏭</button>
+    </div>
+    <div id="stats">
+      <span>locked <b id="lockPct">0%</b></span>
+      <span>time <b id="clock">0:00</b></span>
+    </div>
+    <button id="stopBtn">LEAVE THE FLOOR</button>
+  </section>
+</main>
+
+<footer>one tap · your stride · your songs</footer>
+
+<script>
+'use strict';
+
+/* ============ auth (shared, same origin) ============ */
+const CLIENT_ID = '1ef4c2f856ac4bafa74cce2d2bd89c94';
+const TOKEN_URL = 'https://accounts.spotify.com/api/token';
+const RB = 'https://api.reccobeats.com/v1';
+const $ = id => document.getElementById(id);
+
+const store = {
+  get access()  { return localStorage.getItem('rd_access'); },
+  get refresh() { return localStorage.getItem('rd_refresh'); },
+  get expires() { return parseInt(localStorage.getItem('rd_expires') || '0', 10); },
+  save(tok) {
+    localStorage.setItem('rd_access', tok.access_token);
+    if (tok.refresh_token) localStorage.setItem('rd_refresh', tok.refresh_token);
+    localStorage.setItem('rd_expires', String(Date.now() + (tok.expires_in - 60) * 1000));
+  },
+};
+async function ensureToken() {
+  if (store.access && Date.now() < store.expires) return store.access;
+  if (store.refresh) {
+    const res = await fetch(TOKEN_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: store.refresh, client_id: CLIENT_ID }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) { store.save(data); return store.access; }
+  }
+  return null;
+}
+async function spotify(path, opts = {}) {
+  const token = await ensureToken();
+  if (!token) throw new Error('NOT_CONNECTED');
+  const init = { method: opts.method || 'GET', headers: { Authorization: 'Bearer ' + token } };
+  if (opts.body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
+  const res = await fetch('https://api.spotify.com/v1' + path, init);
+  if (res.status === 204) return null;
+  const data = await res.json().catch(() => null);
+  if (!res.ok) { const e = new Error(data?.error?.message || ('http ' + res.status)); e.status = res.status; throw e; }
+  return data;
+}
+
+/* ============ library + taste ============ */
+let cache = {}, library = [], topRank = new Map();
+
+async function loadLibrary() {
+  try { cache = JSON.parse(localStorage.getItem('rd_bpm_cache') || '{}'); } catch (e) {}
+  if (!Object.keys(cache).length) {
+    $('poolLine').textContent = '';
+    $('err').innerHTML = 'No scan on this phone yet — run the <a href="../p4/">song scan</a> once, then come back.';
+    return false;
+  }
+  let offset = 0, total = null;
+  while (total === null || offset < total) {
+    const page = await spotify('/me/tracks?limit=50&offset=' + offset);
+    total = page.total;
+    for (const it of page.items) if (it.track && cache[it.track.id])
+      library.push({ id: it.track.id, name: it.track.name, artists: it.track.artists.map(a => a.name).join(', '), tempo: cache[it.track.id].tempo });
+    offset += 50;
+    $('poolLine').textContent = 'reading your songs… ' + Math.min(offset, total) + '/' + total;
+  }
+  // taste boost: top tracks, if the token/scope/dev-mode allows — silently optional
+  try {
+    const top = await spotify('/me/top/tracks?limit=50&time_range=medium_term');
+    (top.items || []).forEach((t, i) => topRank.set(t.id, 50 - i));
+    $('poolLine').textContent = 'ready — ' + library.length + ' songs tagged · taste boost on';
+  } catch (e) {
+    $('poolLine').textContent = 'ready — ' + library.length + ' songs tagged';
+  }
+  return true;
+}
+
+function bestFit(tempo, target) {
+  const cands = [tempo, tempo / 2, tempo * 2];
+  let best = cands[0];
+  for (const c of cands) if (Math.abs(c - target) < Math.abs(best - target)) best = c;
+  return { eff: best, delta: best - target };
+}
+function stepGridOf(tempo) {
+  let s = tempo;
+  while (s < 110) s *= 2;
+  while (s >= 220) s /= 2;
+  return s;
+}
+function buildPool(target) {
+  return library
+    .map(t => ({ ...t, grid: stepGridOf(t.tempo) }))
+    .filter(t => Math.abs(t.grid - target) <= target * 0.05)
+    .sort((a, b) =>
+      (Math.abs(a.grid - target) - (topRank.get(a.id) || 0) * 0.05) -
+      (Math.abs(b.grid - target) - (topRank.get(b.id) || 0) * 0.05));
+}
+
+/* ============ cadence (validated core) ============ */
+const WINDOW_S = 5, MIN_SPM = 80, MAX_SPM = 240, ENERGY_GATE = 0.35;
+const samples = [];
+function addSample(t, m) {
+  samples.push({ t, m });
+  while (samples.length && t - samples[0].t > WINDOW_S + 1) samples.shift();
+}
+function estimateSpm() {
+  if (samples.length < 60) return null;
+  const t1 = samples[samples.length - 1].t;
+  const win = samples.filter(s => t1 - s.t <= WINDOW_S);
+  if (win.length < 60 || t1 - win[0].t < 2.5) return null;
+  const RATE = 50, dt = 1 / RATE;
+  const t0 = win[0].t, N = Math.floor((t1 - t0) * RATE);
+  const x = new Float32Array(N);
+  let j = 0;
+  for (let i = 0; i < N; i++) {
+    const tt = t0 + i * dt;
+    while (j < win.length - 2 && win[j + 1].t < tt) j++;
+    const a = win[j], b = win[j + 1];
+    const f = b.t > a.t ? (tt - a.t) / (b.t - a.t) : 0;
+    x[i] = a.m + (b.m - a.m) * f;
+  }
+  let mean = 0; for (let i = 0; i < N; i++) mean += x[i]; mean /= N;
+  let varsum = 0;
+  for (let i = 0; i < N; i++) { x[i] -= mean; varsum += x[i] * x[i]; }
+  if (Math.sqrt(varsum / N) < ENERGY_GATE) return { spm: null, still: true };
+  const minLag = Math.floor(RATE * 60 / MAX_SPM), maxLag = Math.ceil(RATE * 60 / MIN_SPM);
+  if (N < maxLag * 2) return null;
+  const ac = new Float32Array(maxLag + 1);
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let s = 0;
+    for (let i = 0; i < N - lag; i++) s += x[i] * x[i + lag];
+    ac[lag] = s / (varsum || 1);
+  }
+  let bestLag = -1, bestV = 0;
+  for (let lag = minLag; lag <= maxLag; lag++) if (ac[lag] > bestV) { bestV = ac[lag]; bestLag = lag; }
+  if (bestLag < 0 || bestV < 0.25) return null;
+  const half = Math.round(bestLag / 2);
+  if (half >= minLag && ac[half] > 0.6 * bestV) bestLag = half;
+  return { spm: 60 * RATE / bestLag, still: false };
+}
+function onMotion(e) {
+  const a = (e.acceleration && e.acceleration.x !== null) ? e.acceleration : e.accelerationIncludingGravity;
+  if (!a || a.x === null) return;
+  addSample(performance.now() / 1000, Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z));
+}
+
+/* ============ flow: gate → stride → floor ============ */
+let phase = 'gate', target = 160, smoothSpm = null;
+let running = false, wakeLock = null, startTime = 0, lockedTicks = 0, totalTicks = 0;
+let nowStepGrid = null, stableSince = null, sliderTouched = false;
+
+async function startRun() {
+  $('err').textContent = '';
+  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      const res = await DeviceMotionEvent.requestPermission();
+      if (res !== 'granted') { $('err').textContent = 'Motion permission declined — reload to try again.'; return; }
+    } catch (e) { $('err').textContent = 'Motion permission failed: ' + e.message; return; }
+  }
+  window.addEventListener('devicemotion', onMotion);
+  phase = 'stride';
+  $('gate').style.display = 'none';
+  $('stride').style.display = 'flex';
+  requestWake();
+  strideTick();
+}
+
+function strideTick() {
+  if (phase !== 'stride') return;
+  const est = estimateSpm();
+  if (est && est.spm) {
+    smoothSpm = smoothSpm === null ? est.spm : smoothSpm * 0.7 + est.spm * 0.3;
+    const n = Math.round(smoothSpm);
+    $('strideSpm').textContent = n;
+    $('strideSpm').classList.remove('faded');
+    if (!sliderTouched) { $('slider').value = n; $('lockNum').textContent = n; }
+    // auto-lock after ~8s of stability (±3 spm)
+    if (Math.abs(smoothSpm - parseInt($('slider').value, 10)) <= 3 && !sliderTouched) {
+      if (!stableSince) stableSince = performance.now();
+      else if (performance.now() - stableSince > 8000) { lockTarget(); return; }
+    } else stableSince = null;
+    $('strideHint').textContent = stableSince ? 'holding… locking in ' + Math.max(0, Math.ceil((8000 - (performance.now() - stableSince)) / 1000)) + 's' : 'just run — I\'m reading your feet';
+  } else {
+    $('strideSpm').textContent = '—';
+    $('strideSpm').classList.add('faded');
+    stableSince = null;
+  }
+  setTimeout(strideTick, 300);
+}
+
+async function lockTarget() {
+  target = parseInt($('slider').value, 10);
+  phase = 'floor';
+  const pool = buildPool(target);
+  if (pool.length < 3) {
+    // widen once before giving up
+    const wide = library.map(t => ({ ...t, grid: stepGridOf(t.tempo) }))
+      .filter(t => Math.abs(t.grid - target) <= target * 0.08)
+      .sort((a, b) => Math.abs(a.grid - target) - Math.abs(b.grid - target));
+    if (wide.length < 3) { backToGate('Not enough songs near ' + target + ' — try a different pace.'); return; }
+    pool.push(...wide);
+  }
+  try {
+    await spotify('/me/player/play', { method: 'PUT', body: { uris: pool.slice(0, 50).map(t => 'spotify:track:' + t.id) } });
+  } catch (e) {
+    if (e.status === 404 || /no active device/i.test(e.message)) {
+      backToGate('Spotify needs waking: open Spotify, play-pause any song, then tap RUN again.');
+      return;
+    }
+    backToGate('decks: ' + e.message);
+    return;
+  }
+  $('stride').style.display = 'none';
+  $('floor').style.display = 'flex';
+  $('targetShow').textContent = target;
+  running = true;
+  startTime = performance.now() / 1000;
+  lockedTicks = 0; totalTicks = 0;
+  floorTick();
+  pollPlayer();
+  discover(pool);
+}
+
+function backToGate(msg) {
+  phase = 'gate'; running = false;
+  window.removeEventListener('devicemotion', onMotion);
+  $('stride').style.display = 'none';
+  $('floor').style.display = 'none';
+  $('gate').style.display = 'flex';
+  $('err').textContent = msg || '';
+}
+
+let pollTimer = null;
+async function pollPlayer() {
+  if (!running) return;
+  try {
+    const p = await spotify('/me/player');
+    if (p && p.item) {
+      $('nowTrack').textContent = p.item.name;
+      $('nowArtist').textContent = p.item.artists.map(a => a.name).join(', ');
+      const known = cache[p.item.id];
+      nowStepGrid = known ? stepGridOf(known.tempo) : null;
+      $('nowBeat').textContent = known
+        ? 'song beat ' + (Math.round(known.tempo * 10) / 10) + ' · step grid ' + Math.round(nowStepGrid)
+        : 'new one — beat unknown, ride it';
+    }
+  } catch (e) { /* transient */ }
+  pollTimer = setTimeout(pollPlayer, 4000);
+}
+
+function gridDelta(spm, grid) {
+  const cands = [spm, spm * 2, spm / 2];
+  let best = Infinity;
+  for (const c of cands) if (Math.abs(c - grid) < Math.abs(best)) best = c - grid;
+  return best;
+}
+
+function floorTick() {
+  if (!running) return;
+  const est = estimateSpm();
+  let display = null;
+  if (est && est.spm) {
+    smoothSpm = smoothSpm === null ? est.spm : smoothSpm * 0.7 + est.spm * 0.3;
+    display = Math.round(smoothSpm);
+  } else if (est && est.still) smoothSpm = null;
+
+  $('spm').textContent = display !== null ? display : '—';
+  $('spm').classList.toggle('faded', display === null);
+
+  document.body.classList.remove('locked', 'close');
+  let word = 'DROP IN';
+  const grid = nowStepGrid || target;
+  if (display !== null) {
+    totalTicks++;
+    const d = gridDelta(display, grid);
+    if (Math.abs(d) <= 3)      { document.body.classList.add('locked'); word = 'IN THE POCKET'; lockedTicks++; }
+    else if (Math.abs(d) <= 8) { document.body.classList.add('close');  word = d > 0 ? 'EASE OFF' : 'PICK IT UP'; }
+    else                       { word = 'FIND THE BEAT'; }
+  } else if (est && est.still) word = 'MOVE WITH IT';
+  $('state').textContent = word;
+
+  $('lockPct').textContent = totalTicks ? Math.round(100 * lockedTicks / totalTicks) + '%' : '0%';
+  const el = Math.floor((performance.now() / 1000) - startTime);
+  $('clock').textContent = Math.floor(el / 60) + ':' + String(el % 60).padStart(2, '0');
+  setTimeout(floorTick, 300);
+}
+
+/* ============ discovery: new songs at your tempo ============ */
+async function discover(pool) {
+  try {
+    const seedsSp = pool.slice(0, 5).map(t => t.id);
+    const r = await fetch(RB + '/track?ids=' + seedsSp.join(','));
+    if (!r.ok) return;
+    const seedIds = ((await r.json()).content || []).map(c => c.id).slice(0, 5);
+    if (!seedIds.length) return;
+    const musical = target >= 120 ? target / 2 : target;
+    const rr = await fetch(RB + '/track/recommendation?size=10&seeds=' + seedIds.join(',') + '&tempo=' + Math.round(musical));
+    if (!rr.ok) return;
+    const recs = ((await rr.json()).content || [])
+      .map(c => ({ name: c.trackTitle, artists: (c.artists || []).map(a => a.name).join(', '),
+                   spid: (c.href || '').match(/track\/([A-Za-z0-9]+)/)?.[1] }))
+      .filter(x => x.spid && !library.some(t => t.id === x.spid))
+      .slice(0, 6);
+    if (!recs.length) return;
+    $('discList').innerHTML = recs.map((x, i) =>
+      '<div class="discRow"><div class="dLeft"><div class="dName">' + esc(x.name) + '</div><div class="dArtist">' + esc(x.artists) + '</div></div>' +
+      '<button class="qBtn" data-spid="' + x.spid + '">＋</button></div>').join('');
+    $('discCard').style.display = 'block';
+    $('discList').querySelectorAll('.qBtn').forEach(b => b.addEventListener('click', async () => {
+      try {
+        await spotify('/me/player/queue?uri=' + encodeURIComponent('spotify:track:' + b.dataset.spid), { method: 'POST' });
+        b.textContent = '✓'; b.classList.add('done');
+      } catch (e) { b.textContent = '✗'; }
+    }));
+  } catch (e) { /* discovery is optional */ }
+}
+
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+/* ============ controls ============ */
+async function requestWake() {
+  try { wakeLock = await navigator.wakeLock?.request('screen'); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && (running || phase === 'stride')) requestWake();
+});
+
+$('runBtn').addEventListener('click', startRun);
+$('slider').addEventListener('input', () => { sliderTouched = true; stableSince = null; $('lockNum').textContent = $('slider').value; });
+$('lockNowBtn').addEventListener('click', lockTarget);
+$('skipBtn').addEventListener('click', () => { spotify('/me/player/next', { method: 'POST' }).catch(() => {}); setTimeout(pollPlayer, 500); });
+$('pauseBtn').addEventListener('click', async () => {
+  try {
+    const p = await spotify('/me/player');
+    if (p && p.is_playing) await spotify('/me/player/pause', { method: 'PUT' });
+    else await spotify('/me/player/play', { method: 'PUT' });
+  } catch (e) {}
+});
+$('stopBtn').addEventListener('click', () => {
+  spotify('/me/player/pause', { method: 'PUT' }).catch(() => {});
+  wakeLock?.release().catch(() => {});
+  document.body.classList.remove('locked', 'close');
+  backToGate('');
+});
+
+/* ============ boot ============ */
+(async () => {
+  if (!(await ensureToken().catch(() => null))) {
+    $('poolLine').textContent = '';
+    $('err').innerHTML = 'Connect Spotify on the <a href="../p3/">connect page</a> first, then come back.';
+    return;
+  }
+  loadLibrary().catch(e => { $('poolLine').textContent = ''; $('err').textContent = 'library: ' + e.message; });
+})();
+</script>
+</body>
+</html>
