@@ -196,7 +196,12 @@ async function spotify(path, opts = {}) {
   const res = await fetch('https://api.spotify.com/v1' + path, init);
   if (res.status === 204) return null;
   const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(data?.error?.message || ('spotify http ' + res.status));
+  if (!res.ok) {
+    const e = new Error((data?.error?.message || ('http ' + res.status)) +
+      ' [' + init.method + ' ' + path.split('?')[0] + ' → ' + res.status + ']');
+    e.status = res.status;
+    throw e;
+  }
   return data;
 }
 
@@ -392,9 +397,8 @@ async function buildPlaylist() {
     btn.textContent = '✓ “' + name.toUpperCase() + '” READY — ' + pool.length + ' SONGS (' + toAdd.length + ' NEW)';
     showTuning(pool, pl.id);
   } catch (e) {
-    $('buildErr').textContent = (e.message === 'NOT_CONNECTED' || /insufficient|scope|403|forbidden/i.test(e.message))
-      ? 'Your Spotify login is missing the playlist permission. Go to the P3 page → disconnect → reconnect (approve the playlist permissions) → come back and rescan.'
-      : 'build: ' + e.message;
+    const sc = localStorage.getItem('rd_scope') || '(none recorded)';
+    $('buildErr').textContent = 'build: ' + e.message + ' · token scopes: ' + sc;
     btn.disabled = false;
     $('buildBtn').textContent = 'CREATE “RUNDANCE ' + TARGET + '” IN SPOTIFY';
   }
