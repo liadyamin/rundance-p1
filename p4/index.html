@@ -377,8 +377,23 @@ async function buildPlaylist() {
       pl = pg.items.find(p => p && p.name === name && p.owner.id === me.id) || null;
       off += 50;
     }
-    if (!pl) pl = await spotify('/users/' + encodeURIComponent(me.id) + '/playlists',
-      { method: 'POST', body: { name, public: false, description: 'RunDance — your ' + TARGET + ' groove. Tune each song to ' + TARGET + '.0 once; it saves here forever.' } });
+    if (!pl) {
+      // Spotify blocks dev-mode apps from creating playlists (403 regardless
+      // of scopes) — try anyway in case the wall lifts, else guide manual create.
+      try {
+        pl = await spotify('/users/' + encodeURIComponent(me.id) + '/playlists',
+          { method: 'POST', body: { name, public: false, description: 'RunDance — your ' + TARGET + ' groove. Tune each song to ' + TARGET + '.0 once; it saves here forever.' } });
+      } catch (e) {
+        if (e.status === 403) {
+          $('buildErr').innerHTML = 'Spotify doesn’t let small apps create playlists — but filling one works. ' +
+            '<b style="color:var(--ink)">In Spotify: + Create playlist, name it exactly “' + name + '”</b>, then tap the button again and I’ll find it and fill it.';
+          btn.disabled = false;
+          btn.textContent = 'I MADE “' + name.toUpperCase() + '” — FILL IT';
+          return;
+        }
+        throw e;
+      }
+    }
 
     // what's already inside
     const have = new Set(); off = 0; total = null;
