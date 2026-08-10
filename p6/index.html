@@ -7,9 +7,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>rundance</title>
 <style>
-  /* ————— paper, ink, one red —————
-     After Hara: the page is emptiness; the number is the object.
-     One accent, used only when the body earns it. */
   :root {
     --paper: #ffffff;
     --ink: #1d1d1b;
@@ -26,59 +23,75 @@
     user-select: none; -webkit-user-select: none;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-  header { padding: 34px 0 0; text-align: center; }
-  .brand { font-weight: 300; letter-spacing: 0.42em; font-size: 11px; color: var(--ink); text-transform: lowercase; }
-
-  main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 28px 28px; width: 100%; max-width: 480px; margin: 0 auto; }
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 26px 20px; width: 100%; max-width: 480px; margin: 0 auto; }
   section { width: 100%; }
 
-  /* ————— gate ————— */
-  #gate { display: flex; flex-direction: column; align-items: center; text-align: center; }
-  #gate .word { font-size: 15px; font-weight: 300; color: var(--faint); letter-spacing: 0.06em; line-height: 2; max-width: 250px; }
+  /* ————— gate: one circle, nothing else ————— */
+  #gate { display: flex; flex-direction: column; align-items: center; justify-content: center; }
   #runBtn {
-    margin: 64px 0 56px;
-    width: 148px; height: 148px; border-radius: 50%;
-    font: inherit; font-size: 15px; font-weight: 300; letter-spacing: 0.34em; text-indent: 0.34em;
+    width: 210px; height: 210px; border-radius: 50%;
+    font: inherit; font-size: 15px; font-weight: 300; letter-spacing: 0.36em; text-indent: 0.36em;
     color: var(--ink); background: none; border: 1px solid var(--ink);
     transition: color 0.4s, border-color 0.4s;
+    text-transform: lowercase;
   }
   #runBtn:active { color: var(--red); border-color: var(--red); }
-  #poolLine { font-size: 11px; font-weight: 300; color: var(--faint); letter-spacing: 0.1em; min-height: 16px; }
-  .err { color: var(--red); font-size: 12px; font-weight: 300; max-width: 300px; line-height: 1.8; margin-top: 18px; }
+  .err { color: var(--red); font-size: 12px; font-weight: 300; max-width: 300px; line-height: 1.8; margin-top: 28px; text-align: center; }
+  .err:empty { display: none; }
   .err a { color: var(--red); }
 
   /* ————— stride ————— */
   #stride { display: none; flex-direction: column; align-items: center; text-align: center; }
   .quiet { font-size: 11px; font-weight: 300; letter-spacing: 0.3em; color: var(--faint); text-transform: lowercase; }
-  #strideSpm { font-size: min(40vw, 170px); font-weight: 100; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 26px 0 4px; }
+  #strideSpm { font-size: min(38vw, 160px); font-weight: 100; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 24px 0 4px; }
   #strideSpm.faded { color: var(--line); }
   #strideHint { font-size: 12px; font-weight: 300; color: var(--faint); letter-spacing: 0.08em; min-height: 16px; }
-  #slider {
-    width: min(74vw, 320px); margin-top: 54px;
-    accent-color: var(--ink); height: 2px;
-  }
+  #slider { width: min(74vw, 320px); margin-top: 46px; accent-color: var(--ink); }
   #lockNowBtn {
-    margin-top: 34px; font: inherit; font-size: 12px; font-weight: 300; letter-spacing: 0.3em; text-indent: 0.3em;
+    margin-top: 30px; font: inherit; font-size: 12px; font-weight: 300; letter-spacing: 0.3em; text-indent: 0.3em;
     color: var(--ink); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 14px 40px;
+    text-transform: lowercase;
   }
   #lockNowBtn:active { border-color: var(--ink); }
 
-  /* ————— floor ————— */
+  /* ————— floor: player above the fold ————— */
   #floor { display: none; flex-direction: column; align-items: center; }
-  #state { font-size: 12px; font-weight: 300; letter-spacing: 0.34em; text-indent: 0.34em; color: var(--faint); min-height: 18px; text-transform: lowercase; text-align: center; }
+  #state { font-size: 11px; font-weight: 300; letter-spacing: 0.34em; text-indent: 0.34em; color: var(--faint); min-height: 16px; text-transform: lowercase; text-align: center; }
   #state.instep { color: var(--red); }
   #state.near { color: var(--ink); }
-  #spm { font-size: min(36vw, 156px); font-weight: 100; line-height: 1.1; font-variant-numeric: tabular-nums; text-align: center; margin: 14px 0 2px; }
+  #spm { font-size: min(26vw, 110px); font-weight: 100; line-height: 1.05; font-variant-numeric: tabular-nums; text-align: center; margin: 8px 0 0; }
   #spm.faded { color: var(--line); }
-  #spmSub { font-size: 10px; font-weight: 300; letter-spacing: 0.26em; color: var(--faint); text-align: center; text-transform: lowercase; }
+  #spmSub { font-size: 9px; font-weight: 300; letter-spacing: 0.26em; color: var(--faint); text-align: center; text-transform: lowercase; }
 
-  .block { width: 100%; border-top: 1px solid var(--line); margin-top: 34px; padding-top: 14px; }
-  .blockTitle { font-size: 9px; font-weight: 400; letter-spacing: 0.3em; color: var(--faint); text-transform: lowercase; margin-bottom: 8px; }
-  #nowTrack { font-size: 14px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #nowArtist { color: var(--faint); font-size: 12px; font-weight: 300; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #nowBeat { font-size: 10px; font-weight: 300; color: var(--faint); margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: 0.08em; }
+  #player { width: 100%; margin-top: 26px; }
+  #nowTrack { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+  #nowArtist { color: var(--faint); font-size: 12px; font-weight: 300; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+  #progWrap { margin-top: 14px; }
+  #progBar { width: 100%; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  #progFill { height: 100%; width: 0%; background: var(--ink); border-radius: 2px; }
+  #progTimes { display: flex; justify-content: space-between; margin-top: 5px; color: var(--faint); font-size: 10px; font-weight: 300; font-variant-numeric: tabular-nums; }
 
-  .discRow { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  #controls { display: flex; align-items: center; justify-content: center; gap: 44px; margin-top: 18px; }
+  .sideBtn {
+    font: inherit; color: var(--ink); background: none; border: none;
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  }
+  .sideBtn svg { width: 26px; height: 26px; fill: var(--ink); }
+  #playBtn {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--ink); border: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #playBtn svg { width: 26px; height: 26px; fill: var(--paper); }
+  #playBtn:active { background: var(--red); }
+  .sideBtn:active svg { fill: var(--red); }
+
+  #stats { display: flex; gap: 34px; margin-top: 20px; color: var(--faint); font-size: 10px; font-weight: 300; letter-spacing: 0.18em; font-variant-numeric: tabular-nums; justify-content: center; text-transform: lowercase; }
+  #stats b { color: var(--ink); font-weight: 400; }
+
+  .block { width: 100%; border-top: 1px solid var(--line); margin-top: 26px; padding-top: 12px; }
+  .blockTitle { font-size: 9px; font-weight: 400; letter-spacing: 0.3em; color: var(--faint); text-transform: lowercase; margin-bottom: 6px; }
+  .discRow { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
   .discRow:last-child { border-bottom: none; }
   .dLeft { min-width: 0; flex: 1; }
   .dName { font-size: 13px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -91,32 +104,17 @@
   .qBtn.done { color: var(--red); border-color: var(--red); }
   #moreDisc { font: inherit; font-size: 10px; font-weight: 300; letter-spacing: 0.24em; color: var(--faint); background: none; border: none; padding: 10px 0 0; text-transform: lowercase; }
 
-  #controls { display: flex; gap: 40px; margin-top: 36px; justify-content: center; }
-  .tBtn {
-    font: inherit; font-size: 11px; font-weight: 300; letter-spacing: 0.28em; text-indent: 0.28em;
-    color: var(--ink); background: none; border: none; padding: 8px 0; text-transform: lowercase;
-  }
-  .tBtn:active { color: var(--red); }
-  #stats { display: flex; gap: 34px; margin-top: 26px; color: var(--faint); font-size: 10px; font-weight: 300; letter-spacing: 0.18em; font-variant-numeric: tabular-nums; justify-content: center; text-transform: lowercase; }
-  #stats b { color: var(--ink); font-weight: 400; }
-  #windBtn, #stopBtn {
-    font: inherit; font-size: 10px; font-weight: 300; letter-spacing: 0.3em; text-indent: 0.3em;
+  #stopBtn {
+    margin: 26px auto 0; display: block; font: inherit; font-size: 10px; font-weight: 300; letter-spacing: 0.3em; text-indent: 0.3em;
     color: var(--faint); background: none; border: none; text-transform: lowercase; padding: 6px;
   }
-  #endRow { display: flex; gap: 30px; margin-top: 30px; justify-content: center; }
-  footer { text-align: center; color: var(--faint); font-size: 9px; font-weight: 300; padding: 16px; letter-spacing: 0.24em; text-transform: lowercase; }
-
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<header><div class="brand">rundance</div></header>
-
 <main>
   <section id="gate">
-    <div class="word">nothing to set.<br>your stride finds its rhythm,<br>and your music follows.</div>
-    <button id="runBtn">run</button>
-    <div id="poolLine"></div>
+    <button id="runBtn">rundance</button>
     <div class="err" id="err"></div>
   </section>
 
@@ -133,11 +131,30 @@
     <div id="spm" class="faded">—</div>
     <div id="spmSub">steps each minute · with <span id="targetShow">–</span></div>
 
-    <div class="block">
-      <div class="blockTitle">now playing</div>
+    <div id="player">
       <div id="nowTrack">…</div>
       <div id="nowArtist"></div>
-      <div id="nowBeat"></div>
+      <div id="progWrap">
+        <div id="progBar"><div id="progFill"></div></div>
+        <div id="progTimes"><span id="tCur">0:00</span><span id="tTot">0:00</span></div>
+      </div>
+      <div id="controls">
+        <button class="sideBtn" id="prevBtn" aria-label="previous">
+          <svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9.5 12z"/></svg>
+        </button>
+        <button id="playBtn" aria-label="play or pause">
+          <svg id="iconPlay" viewBox="0 0 24 24" style="display:none"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="iconPause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+        </button>
+        <button class="sideBtn" id="nextBtn" aria-label="next">
+          <svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l10.5-7z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="stats">
+      <span>in step <b id="lockPct">–</b></span>
+      <span><b id="clock">0:00</b></span>
     </div>
 
     <div class="block" id="discCard" style="display:none">
@@ -146,22 +163,9 @@
       <button id="moreDisc">a few more</button>
     </div>
 
-    <div id="controls">
-      <button class="tBtn" id="pauseBtn">pause</button>
-      <button class="tBtn" id="skipBtn">next</button>
-    </div>
-    <div id="stats">
-      <span>in step <b id="lockPct">–</b></span>
-      <span><b id="clock">0:00</b></span>
-    </div>
-    <div id="endRow">
-      <button id="windBtn">wind down</button>
-      <button id="stopBtn">finish</button>
-    </div>
+    <button id="stopBtn">finish</button>
   </section>
 </main>
-
-<footer>only to run</footer>
 
 <script>
 'use strict';
@@ -206,10 +210,13 @@ async function spotify(path, opts = {}) {
   return data;
 }
 
-/* ============ waking the decks ============
-   "No active device" just means Spotify dozed off. Find any known
-   device and address it directly; only ask the runner as a last resort. */
-async function playUris(uris) {
+/* ============ relentless playback ============
+   Try direct → try any registered device by id → open the Spotify app
+   itself and keep retrying until sound happens. Never gives up quietly. */
+let wantPlayback = null;   // uris we are trying to start
+let wakeTimer = null, openedSpotify = false;
+
+async function tryPlayOnce(uris) {
   try {
     await spotify('/me/player/play', { method: 'PUT', body: { uris } });
     return true;
@@ -220,11 +227,45 @@ async function playUris(uris) {
   const devs = d?.devices || [];
   const dev = devs.find(x => x.type === 'Smartphone') || devs[0];
   if (dev) {
-    await spotify('/me/player/play?device_id=' + encodeURIComponent(dev.id), { method: 'PUT', body: { uris } });
-    return true;
+    try {
+      await spotify('/me/player/play?device_id=' + encodeURIComponent(dev.id), { method: 'PUT', body: { uris } });
+      return true;
+    } catch (e) { /* fall through */ }
   }
-  return false;   // truly asleep — needs one human touch
+  return false;
 }
+
+function startPlayback(uris) {
+  wantPlayback = uris;
+  openedSpotify = false;
+  const attempt = async (n) => {
+    if (!wantPlayback) return;
+    let ok = false;
+    try { ok = await tryPlayOnce(wantPlayback); }
+    catch (e) { $('err').textContent = 'the decks said: ' + e.message; wantPlayback = null; return; }
+    if (ok) {
+      wantPlayback = null;
+      $('strideHint').textContent = '';
+      setTimeout(pollPlayer, 400);
+      return;
+    }
+    // spotify is asleep — open it once, keep knocking either way
+    if (!openedSpotify && n >= 1) {
+      openedSpotify = true;
+      $('strideHint').textContent = 'waking spotify…';
+      location.href = 'spotify://';
+    }
+    wakeTimer = setTimeout(() => attempt(n + 1), 2500);
+  };
+  attempt(0);
+}
+document.addEventListener('visibilitychange', () => {
+  // came back from the Spotify app → knock immediately
+  if (document.visibilityState === 'visible' && wantPlayback) {
+    clearTimeout(wakeTimer);
+    startPlayback(wantPlayback);
+  }
+});
 
 /* ============ library + taste ============ */
 let cache = {}, library = [], topRank = new Map();
@@ -244,13 +285,11 @@ async function loadLibrary() {
         artists: it.track.artists.map(a => a.name).join(', '),
         tempo: cache[it.track.id].tempo, energy: cache[it.track.id].energy ?? 0.5 });
     offset += 50;
-    $('poolLine').textContent = 'listening to your library · ' + Math.min(offset, total) + ' of ' + total;
   }
   try {
     const top = await spotify('/me/top/tracks?limit=50&time_range=medium_term');
     (top.items || []).forEach((t, i) => topRank.set(t.id, 50 - i));
   } catch (e) { /* quietly optional */ }
-  $('poolLine').textContent = library.length + ' songs know your name';
   return true;
 }
 
@@ -260,20 +299,12 @@ function stepGridOf(tempo) {
   while (s >= 220) s /= 2;
   return s;
 }
-
-/* the set: begins a breath below your number, rises to it.
-   a dj never says "warmup" — the room just gets warmer. */
 function buildSet(target) {
-  const all = library
-    .map(t => ({ ...t, grid: stepGridOf(t.tempo) }))
-    .filter(t => Math.abs(t.grid - target) <= target * 0.06);
-  if (all.length < 3) return all.sort((a, b) => Math.abs(a.grid - target) - Math.abs(b.grid - target));
-
   const score = t => Math.abs(t.grid - target) - (topRank.get(t.id) || 0) * 0.05;
-  const below = all.filter(t => t.grid < target - 1).sort((a, b) => (a.grid - b.grid) || (a.energy - b.energy));
-  const openers = below.slice(0, 3).sort((a, b) => a.grid - b.grid || a.energy - b.energy);
-  const rest = all.filter(t => !openers.includes(t)).sort((a, b) => score(a) - score(b));
-  return [...openers, ...rest];
+  return library
+    .map(t => ({ ...t, grid: stepGridOf(t.tempo) }))
+    .filter(t => Math.abs(t.grid - target) <= target * 0.06)
+    .sort((a, b) => score(a) - score(b));
 }
 
 /* ============ cadence (validated core) ============ */
@@ -328,9 +359,14 @@ function onMotion(e) {
 let phase = 'gate', target = 160, smoothSpm = null;
 let running = false, wakeLock = null, startTime = 0, lockedTicks = 0, totalTicks = 0;
 let nowStepGrid = null, stableSince = null, sliderTouched = false;
+let currentSet = [];
 
 async function startRun() {
   $('err').textContent = '';
+  if (!library.length) {
+    const ok = await loadLibrary().catch(e => { $('err').textContent = 'library: ' + e.message; return false; });
+    if (!ok) return;
+  }
   if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
     try {
       const res = await DeviceMotionEvent.requestPermission();
@@ -368,60 +404,31 @@ function strideTick() {
   setTimeout(strideTick, 300);
 }
 
-let currentSet = [];
-async function lockTarget() {
+function lockTarget() {
   target = parseInt($('slider').value, 10);
-  phase = 'floor';
   currentSet = buildSet(target);
-  if (currentSet.length < 3) { backToGate('too few songs near ' + target + ' — another pace, perhaps.'); return; }
-  await beginPlayback(currentSet);
-}
-
-async function beginPlayback(set) {
-  try {
-    const ok = await playUris(set.slice(0, 50).map(t => 'spotify:track:' + t.id));
-    if (!ok) {
-      // Spotify is fully asleep — one human touch, then we retry by ourselves
-      backToGate('');
-      $('err').innerHTML = 'spotify is asleep. <a href="spotify://">open it</a>, let it breathe, come back — I\'ll be trying.';
-      retryWake(set);
-      return;
-    }
-  } catch (e) { backToGate('the decks said: ' + e.message); return; }
-
+  if (currentSet.length < 3) {
+    phase = 'gate';
+    $('stride').style.display = 'none';
+    $('gate').style.display = 'flex';
+    $('err').textContent = 'too few songs near ' + target + ' — another pace, perhaps.';
+    return;
+  }
+  phase = 'floor';
   $('stride').style.display = 'none';
   $('floor').style.display = 'flex';
   $('targetShow').textContent = target;
   running = true;
   startTime = performance.now() / 1000;
   lockedTicks = 0; totalTicks = 0;
+  startPlayback(currentSet.slice(0, 50).map(t => 'spotify:track:' + t.id));
   floorTick();
   pollPlayer();
   discover(true);
 }
 
-let wakeTries = 0;
-function retryWake(set) {
-  wakeTries = 0;
-  const attempt = async () => {
-    if (phase === 'floor' || wakeTries++ > 15) return;
-    const ok = await playUris(set.slice(0, 50).map(t => 'spotify:track:' + t.id)).catch(() => false);
-    if (ok) { phase = 'floor'; $('err').textContent = ''; $('gate').style.display = 'none'; await beginPlayback(set); return; }
-    setTimeout(attempt, 2500);
-  };
-  setTimeout(attempt, 2500);
-}
-
-function backToGate(msg) {
-  phase = 'gate'; running = false;
-  window.removeEventListener('devicemotion', onMotion);
-  $('stride').style.display = 'none';
-  $('floor').style.display = 'none';
-  $('gate').style.display = 'flex';
-  $('err').textContent = msg || '';
-}
-
-let pollTimer = null;
+/* ============ player state + progress ============ */
+let pollTimer = null, prog = { ms: 0, total: 0, playing: false, at: 0 };
 async function pollPlayer() {
   if (!running) return;
   try {
@@ -431,13 +438,27 @@ async function pollPlayer() {
       $('nowArtist').textContent = p.item.artists.map(a => a.name).join(', ');
       const known = cache[p.item.id];
       nowStepGrid = known ? stepGridOf(known.tempo) : null;
-      $('nowBeat').textContent = known
-        ? (Math.round(known.tempo * 10) / 10) + ' · your feet at ' + Math.round(nowStepGrid)
-        : 'a new one — ride it';
+      prog = { ms: p.progress_ms || 0, total: p.item.duration_ms || 0, playing: !!p.is_playing, at: performance.now() };
+      $('iconPlay').style.display = p.is_playing ? 'none' : 'block';
+      $('iconPause').style.display = p.is_playing ? 'block' : 'none';
     }
   } catch (e) { /* transient */ }
   pollTimer = setTimeout(pollPlayer, 4000);
 }
+function fmtMs(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+function progressTick() {
+  const cur = prog.playing ? prog.ms + (performance.now() - prog.at) : prog.ms;
+  if (prog.total > 0) {
+    $('progFill').style.width = Math.min(100, 100 * cur / prog.total) + '%';
+    $('tCur').textContent = fmtMs(cur);
+    $('tTot').textContent = fmtMs(prog.total);
+  }
+  requestAnimationFrame ? setTimeout(progressTick, 500) : null;
+}
+progressTick();
 
 function gridDelta(spm, grid) {
   const cands = [spm, spm * 2, spm / 2];
@@ -477,7 +498,7 @@ function floorTick() {
   setTimeout(floorTick, 300);
 }
 
-/* ============ new, at your pace — the pool grows ============ */
+/* ============ new, at your pace ============ */
 let discSeen = new Set(), discSeedShift = 0;
 async function discover(fresh) {
   try {
@@ -512,24 +533,10 @@ async function discover(fresh) {
         } catch (e) { b.textContent = '×'; }
       });
     });
-  } catch (e) { /* discovery is a gift, never a demand */ }
+  } catch (e) { /* optional */ }
 }
 $('moreDisc').addEventListener('click', () => discover(false));
-
 function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
-
-/* ============ wind down — the set descends with you ============ */
-async function windDown() {
-  const lower = library
-    .map(t => ({ ...t, grid: stepGridOf(t.tempo) }))
-    .filter(t => t.grid >= target - 14 && t.grid <= target - 4)
-    .sort((a, b) => (b.grid - a.grid) || (a.energy - b.energy));   // descending tempo, calm first
-  if (!lower.length) return;
-  try { await playUris(lower.slice(0, 12).map(t => 'spotify:track:' + t.id)); } catch (e) {}
-  $('windBtn').textContent = 'descending…';
-  setTimeout(() => { $('windBtn').textContent = 'wind down'; }, 4000);
-  setTimeout(pollPlayer, 600);
-}
 
 /* ============ controls ============ */
 async function requestWake() {
@@ -542,19 +549,24 @@ document.addEventListener('visibilitychange', () => {
 $('runBtn').addEventListener('click', startRun);
 $('slider').addEventListener('input', () => { sliderTouched = true; stableSince = null; $('lockNum').textContent = $('slider').value; });
 $('lockNowBtn').addEventListener('click', lockTarget);
-$('skipBtn').addEventListener('click', () => { spotify('/me/player/next', { method: 'POST' }).catch(() => {}); setTimeout(pollPlayer, 500); });
-$('pauseBtn').addEventListener('click', async () => {
+$('nextBtn').addEventListener('click', () => { spotify('/me/player/next', { method: 'POST' }).catch(() => {}); setTimeout(pollPlayer, 500); });
+$('prevBtn').addEventListener('click', () => { spotify('/me/player/previous', { method: 'POST' }).catch(() => {}); setTimeout(pollPlayer, 500); });
+$('playBtn').addEventListener('click', async () => {
   try {
-    const p = await spotify('/me/player');
-    if (p && p.is_playing) { await spotify('/me/player/pause', { method: 'PUT' }); $('pauseBtn').textContent = 'play'; }
-    else { await spotify('/me/player/play', { method: 'PUT' }); $('pauseBtn').textContent = 'pause'; }
+    if (prog.playing) await spotify('/me/player/pause', { method: 'PUT' });
+    else await spotify('/me/player/play', { method: 'PUT' });
+    setTimeout(pollPlayer, 300);
   } catch (e) {}
 });
-$('windBtn').addEventListener('click', windDown);
 $('stopBtn').addEventListener('click', () => {
+  running = false; phase = 'gate'; wantPlayback = null;
+  clearTimeout(wakeTimer); clearTimeout(pollTimer);
+  window.removeEventListener('devicemotion', onMotion);
   spotify('/me/player/pause', { method: 'PUT' }).catch(() => {});
   wakeLock?.release().catch(() => {});
-  backToGate('');
+  $('floor').style.display = 'none';
+  $('gate').style.display = 'flex';
+  $('err').textContent = '';
 });
 
 /* ============ boot ============ */
@@ -563,7 +575,7 @@ $('stopBtn').addEventListener('click', () => {
     $('err').innerHTML = 'first, <a href="../p3/">a word with spotify</a>. then only running.';
     return;
   }
-  loadLibrary().catch(e => { $('poolLine').textContent = ''; $('err').textContent = 'library: ' + e.message; });
+  loadLibrary().catch(() => {});   // warm silently; startRun re-checks
 })();
 </script>
 </body>
