@@ -77,7 +77,7 @@
 <body>
 <header>
   <div class="brand">RUN<em>DANCE</em></div>
-  <div class="proto">P3 · YOUR SONGS</div>
+  <div class="proto">P3 · YOUR SONGS · v3</div>
 </header>
 
 <main>
@@ -139,8 +139,9 @@ const store = {
     localStorage.setItem('rd_access', tok.access_token);
     if (tok.refresh_token) localStorage.setItem('rd_refresh', tok.refresh_token);
     localStorage.setItem('rd_expires', String(Date.now() + (tok.expires_in - 60) * 1000));
+    if (tok.scope) localStorage.setItem('rd_scope', tok.scope);
   },
-  clear() { ['rd_access','rd_refresh','rd_expires','rd_verifier'].forEach(k => localStorage.removeItem(k)); }
+  clear() { ['rd_access','rd_refresh','rd_expires','rd_verifier','rd_scope'].forEach(k => localStorage.removeItem(k)); }
 };
 
 function b64url(bytes) {
@@ -162,6 +163,7 @@ async function beginAuth() {
       scope: SCOPES,
       code_challenge_method: 'S256',
       code_challenge: challenge,
+      show_dialog: 'true',
     });
     location.href = AUTH_URL + '?' + p.toString();
   } catch (e) {
@@ -235,6 +237,9 @@ async function showCrate() {
     $('who').innerHTML = (me.display_name || me.id) +
       ' · <span class="' + (prem ? 'ok' : '') + '">' + (me.product || '?') + '</span>';
     if (!prem) $('who').innerHTML += ' <span style="color:var(--warm)">— playback control needs Premium</span>';
+    const sc = localStorage.getItem('rd_scope') || '';
+    const hasPl = sc.includes('playlist-modify');
+    $('who').innerHTML += '<div style="margin-top:6px;font-size:11px;color:' + (hasPl ? 'var(--ok)' : 'var(--warm)') + '">playlist access: ' + (hasPl ? 'YES' : 'NO — reconnect and approve playlists') + '</div>';
   } catch (e) { $('who').textContent = 'profile error: ' + e.message; }
 
   // liked songs, first page
