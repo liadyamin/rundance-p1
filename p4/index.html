@@ -77,6 +77,22 @@
   }
   .grooveBtn.active { color: var(--ink); border-color: var(--hot); background: rgba(255,61,129,0.10); }
   .half { font-size: 9px; letter-spacing: 0.08em; color: var(--dim); }
+  .buildNote { color: var(--dim); font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+  .buildNote b { color: var(--ink); }
+  .bigBtn.small { font-size: 14px; padding: 14px 24px; width: 100%; box-shadow: none; }
+  .tuneRow { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid #1a1725; }
+  .tuneRow:last-child { border-bottom: none; }
+  .tuneCheck {
+    width: 26px; height: 26px; border-radius: 8px; flex: none;
+    border: 1.5px solid #2a2836; background: #1a1725;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: var(--ok);
+  }
+  .tuneRow.done .tuneCheck { border-color: var(--ok); background: rgba(61,214,140,0.10); }
+  .tuneRow.done .tName { color: var(--dim); text-decoration: line-through; }
+  .tuneTarget { font-size: 11px; font-weight: 700; color: var(--warm); white-space: nowrap; }
+  .tuneRow.done .tuneTarget { color: var(--dim); }
+  .openLink { font-size: 18px; text-decoration: none; flex: none; }
   footer { text-align: center; color: #3c3948; font-size: 10px; padding: 14px; letter-spacing: 0.06em; }
 </style>
 </head>
@@ -121,6 +137,19 @@
       <div class="cardTitle" id="listTitle">CLOSEST TO THE GRID</div>
       <div id="topList"></div>
     </div>
+
+    <div class="card" id="buildCard" style="display:none">
+      <div class="cardTitle">MAKE IT REAL</div>
+      <p class="buildNote" id="buildNote">Create the playlist in your Spotify with every tunable song, closest first. If it already exists, I only add what's new — your saved tunings are never touched.</p>
+      <button class="bigBtn small" id="buildBtn">CREATE “RUNDANCE 80” IN SPOTIFY</button>
+      <div class="err" id="buildErr"></div>
+    </div>
+
+    <div class="card" id="tuneCard" style="display:none">
+      <div class="cardTitle" id="tuneTitle">THE TUNING RITUAL</div>
+      <p class="buildNote">One-time per song, ever: tap a song → in Spotify open <b>⋯ → Change speed</b> → drag until the BPM reads your number → save. Come back and check it off.</p>
+      <div id="tuneList"></div>
+    </div>
   </section>
 </main>
 
@@ -159,10 +188,13 @@ async function ensureToken() {
   return null;
 }
 
-async function spotify(path) {
+async function spotify(path, opts = {}) {
   const token = await ensureToken();
   if (!token) throw new Error('NOT_CONNECTED');
-  const res = await fetch('https://api.spotify.com/v1' + path, { headers: { Authorization: 'Bearer ' + token } });
+  const init = { method: opts.method || 'GET', headers: { Authorization: 'Bearer ' + token } };
+  if (opts.body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
+  const res = await fetch('https://api.spotify.com/v1' + path, init);
+  if (res.status === 204) return null;
   const data = await res.json().catch(() => null);
   if (!res.ok) throw new Error(data?.error?.message || ('spotify http ' + res.status));
   return data;
@@ -306,7 +338,92 @@ function render() {
       (Math.abs(x.m.delta) <= strictWin() ? '' : (x.m.delta > 0 ? ' ↓' : ' ↑')) + '</div></div>';
   }).join('');
   $('listCard').style.display = 'block';
+
+  $('buildCard').style.display = 'block';
+  $('buildBtn').textContent = 'CREATE “RUNDANCE ' + TARGET + '” IN SPOTIFY';
+  $('buildBtn').disabled = false;
+  $('tuneCard').style.display = 'none';
 }
+
+/* ============ make it real: playlist + tuning ritual ============ */
+function tunablePool() {
+  return scanTracks
+    .filter(t => typeof t.tempo === 'number')
+    .map(t => ({ t, m: match(t) }))
+    .filter(x => Math.abs(x.m.delta) <= TARGET * 0.10)
+    .sort((a, b) => Math.abs(a.m.delta) - Math.abs(b.m.delta));
+}
+
+async function buildPlaylist() {
+  const btn = $('buildBtn');
+  btn.disabled = true; $('buildErr').textContent = '';
+  try {
+    const pool = tunablePool();
+    if (!pool.length) throw new Error('no tunable songs at this groove');
+    btn.textContent = 'BUILDING…';
+    const me = await spotify('/me');
+    const name = 'RunDance ' + TARGET;
+
+    // find an existing playlist of this name — never regenerate (saved tunings live in it)
+    let pl = null, off = 0, total = null;
+    while (!pl && (total === null || off < total)) {
+      const pg = await spotify('/me/playlists?limit=50&offset=' + off);
+      total = pg.total;
+      pl = pg.items.find(p => p && p.name === name && p.owner.id === me.id) || null;
+      off += 50;
+    }
+    if (!pl) pl = await spotify('/users/' + encodeURIComponent(me.id) + '/playlists',
+      { method: 'POST', body: { name, public: false, description: 'RunDance — your ' + TARGET + ' groove. Tune each song to ' + TARGET + '.0 once; it saves here forever.' } });
+
+    // what's already inside
+    const have = new Set(); off = 0; total = null;
+    while (total === null || off < total) {
+      const pg = await spotify('/playlists/' + pl.id + '/tracks?limit=100&offset=' + off + '&fields=total,items(track(id))');
+      total = pg.total;
+      for (const it of pg.items) if (it.track) have.add(it.track.id);
+      off += 100;
+    }
+    const toAdd = pool.map(x => x.t.id).filter(id => !have.has(id));
+    for (let i = 0; i < toAdd.length; i += 100) {
+      await spotify('/playlists/' + pl.id + '/tracks',
+        { method: 'POST', body: { uris: toAdd.slice(i, i + 100).map(id => 'spotify:track:' + id) } });
+    }
+    localStorage.setItem('rd_playlist_' + TARGET, pl.id);
+    btn.textContent = '✓ “' + name.toUpperCase() + '” READY — ' + pool.length + ' SONGS (' + toAdd.length + ' NEW)';
+    showTuning(pool, pl.id);
+  } catch (e) {
+    $('buildErr').textContent = (e.message === 'NOT_CONNECTED' || /insufficient|scope|403/i.test(e.message))
+      ? 'New permissions needed — go to the P3 page, disconnect, reconnect, then rescan here.'
+      : 'build: ' + e.message;
+    btn.disabled = false;
+    $('buildBtn').textContent = 'CREATE “RUNDANCE ' + TARGET + '” IN SPOTIFY';
+  }
+}
+
+function showTuning(pool, plid) {
+  $('tuneTitle').textContent = 'THE TUNING RITUAL · TARGET ' + TARGET + '.0';
+  $('tuneList').innerHTML = pool.map(x => {
+    const key = 'rd_tuned_' + plid + '_' + x.t.id;
+    const done = localStorage.getItem(key) === '1';
+    const noTune = Math.abs(x.m.delta) <= strictWin();
+    return '<div class="tuneRow' + (done ? ' done' : '') + '" data-key="' + key + '">' +
+      '<div class="tuneCheck">' + (done ? '✓' : '') + '</div>' +
+      '<div class="tLeft"><div class="tName">' + esc(x.t.name) + '</div><div class="tArtist">' + esc(x.t.artists) + '</div></div>' +
+      '<div class="tuneTarget">' + (noTune ? 'ON GRID' : ('→ ' + TARGET + '.0')) + '</div>' +
+      '<a class="openLink" href="https://open.spotify.com/track/' + x.t.id + '" target="_blank" rel="noopener">🎧</a></div>';
+  }).join('');
+  $('tuneCard').style.display = 'block';
+  $('tuneList').querySelectorAll('.tuneRow').forEach(r => {
+    r.querySelector('.tuneCheck').addEventListener('click', () => {
+      const k = r.dataset.key, done = localStorage.getItem(k) === '1';
+      localStorage.setItem(k, done ? '0' : '1');
+      r.classList.toggle('done', !done);
+      r.querySelector('.tuneCheck').textContent = done ? '' : '✓';
+    });
+  });
+}
+
+$('buildBtn').addEventListener('click', buildPlaylist);
 
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
