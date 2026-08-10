@@ -69,6 +69,13 @@
   .badge { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
   .badge.on   { background: rgba(61,214,140,0.12); color: var(--ok); }
   .badge.tune { background: rgba(255,176,61,0.10); color: var(--warm); }
+  .grooveRow { display: flex; gap: 10px; margin-bottom: 12px; }
+  .grooveBtn {
+    flex: 1; font: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
+    color: var(--dim); background: #1a1725; border: 1px solid #2a2836;
+    border-radius: 999px; padding: 10px 6px;
+  }
+  .grooveBtn.active { color: var(--ink); border-color: var(--hot); background: rgba(255,61,129,0.10); }
   .half { font-size: 9px; letter-spacing: 0.08em; color: var(--dim); }
   footer { text-align: center; color: #3c3948; font-size: 10px; padding: 14px; letter-spacing: 0.06em; }
 </style>
@@ -82,7 +89,7 @@
 <main>
   <section id="gate">
     <h1>Scan the crate</h1>
-    <p>I'll tag every song in your Liked Songs with its tempo and find everything that can carry a 160 groove — as-is or with a small tune.</p>
+    <p>I'll tag every song in your Liked Songs with its tempo and find everything that can carry your groove — as-is or with a small tune. Pick 80 or 160 after the scan.</p>
     <button class="bigBtn" id="scanBtn">SCAN MY CRATE</button>
     <div class="err" id="err"></div>
     <button class="linkBtn" id="p3link" style="display:none" onclick="location.href='../p3/'">connect Spotify first →</button>
@@ -97,17 +104,21 @@
 
     <div class="card" id="resultCard" style="display:none">
       <div class="cardTitle">THE VERDICT</div>
+      <div class="grooveRow">
+        <button class="grooveBtn active" id="g80">80 · HALF-TIME</button>
+        <button class="grooveBtn" id="g160">160 · FOUR ON THE FLOOR</button>
+      </div>
       <div class="statRow">
         <div class="stat"><div class="v" id="stCov">–</div><div class="k">BPM COVERAGE</div></div>
-        <div class="stat"><div class="v hot" id="stOn">–</div><div class="k">ON THE 160 GRID ±3</div></div>
+        <div class="stat"><div class="v hot" id="stOn">–</div><div class="k" id="kOn">ON THE GRID</div></div>
         <div class="stat"><div class="v" id="stTune">–</div><div class="k">TUNABLE ±10%</div></div>
       </div>
       <canvas id="hist" width="1040" height="180"></canvas>
-      <div class="histNote">YOUR CRATE BY STEP-TEMPO (HALF-TIME FOLDED UP) · PINK = 160 ZONE</div>
+      <div class="histNote" id="histNote"></div>
     </div>
 
     <div class="card" id="listCard" style="display:none">
-      <div class="cardTitle">CLOSEST TO THE 160 GRID</div>
+      <div class="cardTitle" id="listTitle">CLOSEST TO THE GRID</div>
       <div id="topList"></div>
     </div>
   </section>
@@ -241,51 +252,79 @@ async function runScan() {
 }
 
 /* ============ results ============ */
-const TARGET = 160;
+/* Groove-aware matching. Tempo detectors are half/double-ambiguous
+   (Hey Ya! comes back 79.5), so each song is matched against the target
+   through its best interpretation — reported, halved, or doubled — and
+   badged when it isn't the reported value. */
+let TARGET = 80;
+let scanTracks = null, scanTagged = 0;
+
+function strictWin() { return TARGET < 120 ? 1.5 : 3; }
+
+function match(t) {
+  const r = t.tempo;
+  const cands = [ { v: r, lab: '' }, { v: r / 2, lab: '÷2' }, { v: r * 2, lab: '×2' } ];
+  let best = cands[0];
+  for (const c of cands) if (Math.abs(c.v - TARGET) < Math.abs(best.v - TARGET)) best = c;
+  return { eff: best.v, delta: best.v - TARGET, lab: best.lab };
+}
+
 function showResults(tracks, tagged) {
   $('progressLine').textContent = 'scan complete — ' + tracks.length + ' songs, ' + tagged + ' tagged';
   $('barFill').style.width = '100%';
+  scanTracks = tracks; scanTagged = tagged;
+  render();
+}
 
-  const cov = Math.round(100 * tagged / tracks.length);
-  const withStep = tracks.filter(t => t.step);
-  const on = withStep.filter(t => Math.abs(t.step - TARGET) <= 3);
-  const tune = withStep.filter(t => Math.abs(t.step - TARGET) <= TARGET * 0.10);
+function render() {
+  const tracks = scanTracks;
+  const cov = Math.round(100 * scanTagged / tracks.length);
+  const tagged = tracks.filter(t => typeof t.tempo === 'number');
+  const matched = tagged.map(t => ({ t, m: match(t) }));
+  const on = matched.filter(x => Math.abs(x.m.delta) <= strictWin());
+  const tune = matched.filter(x => Math.abs(x.m.delta) <= TARGET * 0.10);
 
   $('stCov').textContent = cov + '%';
   $('stCov').className = 'v ' + (cov >= 80 ? 'ok' : '');
   $('stOn').textContent = on.length;
+  $('kOn').textContent = 'ON THE ' + TARGET + ' GRID ±' + strictWin();
   $('stTune').textContent = tune.length;
   $('resultCard').style.display = 'block';
 
-  drawHist(withStep);
+  drawHist(matched);
+  $('histNote').textContent = 'YOUR SONGS AROUND THE ' + TARGET + ' GROOVE · PINK = ON GRID · ×2/÷2 = REPORTED AT DOUBLE/HALF';
 
-  const top = withStep.slice().sort((a, b) => Math.abs(a.step - TARGET) - Math.abs(b.step - TARGET)).slice(0, 25);
-  $('topList').innerHTML = top.map(t => {
-    const d = t.step - TARGET;
-    const cls = Math.abs(d) <= 3 ? 'on' : 'tune';
-    return '<div class="track"><div class="tLeft"><div class="tName">' + esc(t.name) +
-      '</div><div class="tArtist">' + esc(t.artists) + (t.fromHalf ? ' <span class="half">· HALF-TIME</span>' : '') + '</div></div>' +
-      '<div class="badge ' + cls + '">' + Math.round(t.step) + (Math.abs(d) <= 3 ? '' : (d > 0 ? ' ↓' : ' ↑')) + '</div></div>';
+  const top = matched.slice().sort((a, b) => Math.abs(a.m.delta) - Math.abs(b.m.delta)).slice(0, 25);
+  $('listTitle').textContent = 'CLOSEST TO THE ' + TARGET + ' GRID';
+  $('topList').innerHTML = top.map(x => {
+    const cls = Math.abs(x.m.delta) <= strictWin() ? 'on' : 'tune';
+    return '<div class="track"><div class="tLeft"><div class="tName">' + esc(x.t.name) +
+      '</div><div class="tArtist">' + esc(x.t.artists) +
+      (x.m.lab ? ' <span class="half">· ' + x.m.lab + ' OF ' + Math.round(x.t.tempo) + '</span>' : '') +
+      '</div></div>' +
+      '<div class="badge ' + cls + '">' + (Math.round(x.m.eff * 10) / 10) +
+      (Math.abs(x.m.delta) <= strictWin() ? '' : (x.m.delta > 0 ? ' ↓' : ' ↑')) + '</div></div>';
   }).join('');
   $('listCard').style.display = 'block';
 }
 
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
-function drawHist(list) {
+function drawHist(matched) {
   const c = $('hist'), ctx = c.getContext('2d');
   ctx.clearRect(0, 0, c.width, c.height);
-  const lo = 110, hi = 220, bins = 22;
+  const lo = TARGET * 0.6875, hi = TARGET * 1.375, bins = 22;
   const counts = new Array(bins).fill(0);
-  for (const t of list) {
-    const b = Math.min(bins - 1, Math.max(0, Math.floor((t.step - lo) / (hi - lo) * bins)));
+  for (const x of matched) {
+    if (x.m.eff < lo || x.m.eff >= hi) continue;
+    const b = Math.min(bins - 1, Math.max(0, Math.floor((x.m.eff - lo) / (hi - lo) * bins)));
     counts[b]++;
   }
   const max = Math.max(...counts, 1);
   const bw = c.width / bins;
   for (let i = 0; i < bins; i++) {
     const binLo = lo + i * (hi - lo) / bins, binHi = binLo + (hi - lo) / bins;
-    const inZone = binHi > TARGET - 3 && binLo < TARGET + 3;
+    const inZone = binHi > TARGET - strictWin() && binLo < TARGET + strictWin();
     const near = binHi > TARGET * 0.9 && binLo < TARGET * 1.1;
     const h = (counts[i] / max) * (c.height - 14);
     ctx.fillStyle = inZone ? '#ff3d81' : near ? '#8a4664' : '#2a2836';
@@ -295,6 +334,14 @@ function drawHist(list) {
   }
 }
 
+function setGroove(g) {
+  TARGET = g;
+  $('g80').classList.toggle('active', g === 80);
+  $('g160').classList.toggle('active', g === 160);
+  if (scanTracks) render();
+}
+$('g80').addEventListener('click', () => setGroove(80));
+$('g160').addEventListener('click', () => setGroove(160));
 $('scanBtn').addEventListener('click', runScan);
 (async () => { if (!(await ensureToken().catch(() => null))) $('p3link').style.display = 'inline'; })();
 </script>
