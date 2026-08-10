@@ -118,9 +118,9 @@
   </section>
 
   <section id="stride">
-    <div class="quiet">finding your stride</div>
+    <div class="quiet">start running · dancing counts</div>
     <div id="strideSpm" class="faded">—</div>
-    <div id="strideHint">keep going</div>
+    <div id="strideHint">i'm reading your feet</div>
     <input type="range" id="slider" min="130" max="200" value="160">
     <button id="lockNowBtn">begin at <span id="lockNum">—</span></button>
   </section>
@@ -435,11 +435,14 @@ function startPlayback(uris) {
     try { ok = await tryPlayOnce(wantPlayback); }
     catch (e) { $('err').textContent = 'the decks said: ' + e.message; wantPlayback = null; return; }
     if (ok) { wantPlayback = null; $('strideHint').textContent = ''; setTimeout(pollPlayer, 400); return; }
+    const first = (wantPlayback[0] || '').replace('spotify:track:', '');
     if (!openedSpotify && n >= 1) {
       openedSpotify = true;
-      const first = (wantPlayback[0] || '').replace('spotify:track:', '');
       $('state').textContent = 'tap play in spotify, then return';
       location.href = 'spotify:track:' + first;
+    }
+    if (n >= 3 && $('floor').style.display !== 'none') {
+      $('state').innerHTML = '<a style="color:var(--red)" href="spotify:track:' + first + '">tap here → play in spotify → return</a>';
     }
     wakeTimer = setTimeout(() => attempt(n + 1), 2500);
   };
@@ -528,11 +531,30 @@ function lockTarget() {
 
 /* ================== player state + progress ================== */
 let pollTimer = null, prog = { ms: 0, total: 0, playing: false, at: 0 };
+let playedIds = [], queuedForId = null, lastTrackId = null;
+
+/* the dj picks the next record while this one is still spinning —
+   corrections happen at song boundaries, never mid-song */
+function pickNext(currentId) {
+  const fresh = currentSet.filter(t => t.id !== currentId && !playedIds.includes(t.id));
+  if (fresh.length) return fresh[0];
+  const any = currentSet.filter(t => t.id !== currentId);
+  return any.length ? any[Math.floor(playedIds.length % any.length)] : null;
+}
+
 async function pollPlayer() {
   if (!running) return;
   try {
     const p = await spotify('/me/player');
     if (p && p.item) {
+      // if music is flowing (even hand-started in spotify), stop knocking
+      if (wantPlayback && p.is_playing) { wantPlayback = null; clearTimeout(wakeTimer); }
+      if (p.item.id !== lastTrackId) {
+        lastTrackId = p.item.id;
+        queuedForId = null;
+        if (!playedIds.includes(p.item.id)) playedIds.push(p.item.id);
+        while (playedIds.length > 12) playedIds.shift();
+      }
       $('nowTrack').textContent = p.item.name;
       $('nowArtist').textContent = p.item.artists.map(a => a.name).join(', ');
       const known = cache[p.item.id];
@@ -541,6 +563,14 @@ async function pollPlayer() {
       $('iconPlay').style.display = p.is_playing ? 'none' : 'block';
       $('iconPause').style.display = p.is_playing ? 'block' : 'none';
       logSong((performance.now() / 1000) - startTime, p.item, nowStepGrid);
+
+      const remaining = (p.item.duration_ms || 0) - (p.progress_ms || 0);
+      if (p.is_playing && remaining > 0 && remaining < 14000 && queuedForId !== p.item.id) {
+        queuedForId = p.item.id;
+        const next = pickNext(p.item.id);
+        if (next) spotify('/me/player/queue?uri=' + encodeURIComponent('spotify:track:' + next.id), { method: 'POST' })
+          .catch(() => { queuedForId = null; });
+      }
     }
   } catch (e) { /* transient */ }
   pollTimer = setTimeout(pollPlayer, 4000);
@@ -561,14 +591,16 @@ function progressTick() {
 progressTick();
 
 /* ================== the dj reads the floor ================== */
-const RETARGET_WINDOW_MS = 25000, RETARGET_DIFF = 4, RETARGET_COOLDOWN_MS = 45000;
+/* wider, calmer, and never abrupt: a retarget only changes what the dj
+   reaches for NEXT — the playing song always finishes on its own. */
+const RETARGET_WINDOW_MS = 35000, RETARGET_DIFF = 6, RETARGET_COOLDOWN_MS = 90000;
 let cadHist = [], lastRetarget = 0;
 function maybeFollowTheFloor(display) {
   const now = performance.now();
   cadHist.push({ t: now, v: display });
   while (cadHist.length && now - cadHist[0].t > RETARGET_WINDOW_MS) cadHist.shift();
   if (now - lastRetarget < RETARGET_COOLDOWN_MS) return;
-  if (cadHist.length < 40) return;
+  if (cadHist.length < 80) return;                       // ~35s of steady readings
   if (now - cadHist[0].t < RETARGET_WINDOW_MS - 2000) return;
   const avg = cadHist.reduce((s, x) => s + x.v, 0) / cadHist.length;
   if (Math.abs(avg - target) <= RETARGET_DIFF) return;
@@ -580,10 +612,9 @@ function maybeFollowTheFloor(display) {
   lastRetarget = now;
   target = newTarget;
   currentSet = newSet;
-  cadHist = [];
+  cadHist = [];              // next boundary pick comes from the new set
   $('targetShow').textContent = target;
   $('state').textContent = 'following you';
-  startPlayback(currentSet.slice(0, 50).map(t => 'spotify:track:' + t.id));
   discover(true);
 }
 
@@ -611,17 +642,19 @@ function floorTick() {
   logCadence(sec, display);
 
   const st = $('state');
-  st.classList.remove('instep', 'near');
-  let word = 'settle in';
-  const grid = nowStepGrid || target;
-  if (display !== null) {
-    totalTicks++;
-    const d = gridDelta(display, grid);
-    if (Math.abs(d) <= 3)      { st.classList.add('instep'); word = 'in step'; lockedTicks++; }
-    else if (Math.abs(d) <= 8) { st.classList.add('near');   word = d > 0 ? 'softer' : 'a little quicker'; }
-    else                       { word = 'listen for it'; }
-  } else if (est && est.still) word = 'move';
-  st.textContent = word;
+  if (!wantPlayback) {   // while waking spotify, the state line carries the instruction
+    st.classList.remove('instep', 'near');
+    let word = 'settle in';
+    const grid = nowStepGrid || target;
+    if (display !== null) {
+      totalTicks++;
+      const d = gridDelta(display, grid);
+      if (Math.abs(d) <= 3)      { st.classList.add('instep'); word = 'in step'; lockedTicks++; }
+      else if (Math.abs(d) <= 8) { st.classList.add('near');   word = d > 0 ? 'softer' : 'a little quicker'; }
+      else                       { word = 'listen for it'; }
+    } else if (est && est.still) word = 'move';
+    st.textContent = word;
+  }
 
   $('lockPct').textContent = totalTicks ? Math.round(100 * lockedTicks / totalTicks) + '%' : '–';
   $('clock').textContent = Math.floor(sec / 60) + ':' + String(Math.floor(sec) % 60).padStart(2, '0');
