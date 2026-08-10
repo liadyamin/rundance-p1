@@ -395,21 +395,42 @@ async function buildPlaylist() {
       }
     }
 
-    // what's already inside
-    const have = new Set(); off = 0; total = null;
-    while (total === null || off < total) {
-      const pg = await spotify('/playlists/' + pl.id + '/tracks?limit=100&offset=' + off + '&fields=total,items(track(id))');
-      total = pg.total;
-      for (const it of pg.items) if (it.track) have.add(it.track.id);
-      off += 100;
-    }
+    // what's already inside — server truth if allowed, else our local record
+    // (dev-mode apps may be blocked from reading playlist items: C-7)
+    const localKey = 'rd_added_' + pl.id;
+    let have = new Set(JSON.parse(localStorage.getItem(localKey) || '[]'));
+    try {
+      const srv = new Set(); off = 0; total = null;
+      while (total === null || off < total) {
+        const pg = await spotify('/playlists/' + pl.id + '/tracks?limit=100&offset=' + off + '&fields=total,items(track(id))');
+        total = pg.total;
+        for (const it of pg.items) if (it.track) srv.add(it.track.id);
+        off += 100;
+      }
+      have = srv;
+    } catch (e) { if (e.status !== 403) throw e; }
+
     const toAdd = pool.map(x => x.t.id).filter(id => !have.has(id));
-    for (let i = 0; i < toAdd.length; i += 100) {
-      await spotify('/playlists/' + pl.id + '/tracks',
-        { method: 'POST', body: { uris: toAdd.slice(i, i + 100).map(id => 'spotify:track:' + id) } });
+    let manual = false;
+    try {
+      for (let i = 0; i < toAdd.length; i += 100) {
+        await spotify('/playlists/' + pl.id + '/tracks',
+          { method: 'POST', body: { uris: toAdd.slice(i, i + 100).map(id => 'spotify:track:' + id) } });
+        toAdd.slice(i, i + 100).forEach(id => have.add(id));
+        localStorage.setItem(localKey, JSON.stringify([...have]));
+      }
+    } catch (e) {
+      if (e.status === 403) manual = true; else throw e;
     }
+
     localStorage.setItem('rd_playlist_' + TARGET, pl.id);
-    btn.textContent = '✓ “' + name.toUpperCase() + '” READY — ' + pool.length + ' SONGS (' + toAdd.length + ' NEW)';
+    if (manual) {
+      btn.textContent = '“' + name.toUpperCase() + '” FOUND — ADD SONGS BY HAND';
+      $('buildErr').innerHTML = 'Spotify also blocks small apps from adding songs. Plan B below: for each song, ' +
+        '<b style="color:var(--ink)">🎧 open it → ⋯ → Add to playlist → “' + name + '” → ⋯ → Change speed → drag to ' + TARGET + '.0 → save</b> — one visit does both.';
+    } else {
+      btn.textContent = '✓ “' + name.toUpperCase() + '” READY — ' + pool.length + ' SONGS (' + toAdd.length + ' NEW)';
+    }
     showTuning(pool, pl.id);
   } catch (e) {
     const sc = localStorage.getItem('rd_scope') || '(none recorded)';
